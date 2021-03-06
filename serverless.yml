@@ -1,0 +1,195 @@
+service: lucene-serverless
+
+frameworkVersion: ">=1.56.1"
+
+provider:
+  name: aws
+  region: eu-west-1
+  versionFunctions: false
+  tracing: false
+  environment:
+    stage: ${self:custom.stage}
+    DISABLE_SIGNAL_HANDLERS: true
+  iamRoleStatements:
+    ${file(roleStatements.yml)}
+  vpc:
+    securityGroupIds:
+      - Ref: EfsSecurityGroup
+    subnetIds:
+      - subnet-7829023e
+      - subnet-c8816fad
+      - subnet-0fe4ef7b
+
+custom:
+  name: ${self:custom.stage}-${self:service}
+  stage: ${opt:stage, self:provider.stage}
+  region: ${opt:region, self:provider.region}
+
+package:
+  individually: true
+
+functions:
+  query:
+    name: ${self:custom.name}-query
+    runtime: provided
+    handler: native.handler
+    dependsOn:
+      - EfsMountTarget1
+      - EfsMountTarget2
+      - EfsMountTarget3
+      - EfsAccessPoint
+    fileSystemConfig:
+      localMountPath: /mnt/data
+      arn:
+        Fn::GetAtt: [ EfsAccessPoint, Arn ]
+    package:
+      artifact: target/function.zip
+    environment:
+      QUARKUS_LAMBDA_HANDLER: query
+      QUARKUS_PROFILE: ${opt:stage, self:provider.stage}
+
+  index:
+    name: ${self:custom.name}-index
+    runtime: provided
+    handler: native.handler
+    reservedConcurrency: 1
+    dependsOn:
+      - EfsMountTarget1
+      - EfsMountTarget2
+      - EfsMountTarget3
+      - EfsAccessPoint
+    fileSystemConfig:
+      localMountPath: /mnt/data
+      arn:
+        Fn::GetAtt: [ EfsAccessPoint, Arn ]
+    package:
+      artifact: target/function.zip
+    environment:
+      QUARKUS_LAMBDA_HANDLER: index
+      QUARKUS_PROFILE: ${opt:stage, self:provider.stage}
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: [ WriteQueue, Arn ]
+          batchSize: 100
+          maximumBatchingWindow: 5
+
+  enqueue-index:
+    name: ${self:custom.name}-enqueue-index
+    runtime: provided
+    handler: native.handler
+    package:
+      artifact: target/function.zip
+    vpc:
+      securityGroupIds: [ ]
+      subnetIds: [ ]
+    environment:
+      QUARKUS_LAMBDA_HANDLER: enqueue-index
+      QUARKUS_PROFILE: ${opt:stage, self:provider.stage}
+      QUEUE_URL:
+        Ref: WriteQueue
+
+  delete-index:
+    name: ${self:custom.name}-delete-index
+    runtime: provided
+    handler: native.handler
+    dependsOn:
+      - EfsMountTarget1
+      - EfsMountTarget2
+      - EfsMountTarget3
+      - EfsAccessPoint
+    fileSystemConfig:
+      localMountPath: /mnt/data
+      arn:
+        Fn::GetAtt: [ EfsAccessPoint, Arn ]
+    package:
+      artifact: target/function.zip
+    environment:
+      QUARKUS_LAMBDA_HANDLER: deleteIndex
+      QUARKUS_PROFILE: ${opt:stage, self:provider.stage}
+
+resources:
+  Resources:
+    WriteQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:custom.name}-write-queue
+        VisibilityTimeout: 900
+        RedrivePolicy:
+          deadLetterTargetArn:
+            Fn::GetAtt: [ WriteDLQ, Arn ]
+          maxReceiveCount: 5
+
+    WriteDLQ:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:custom.name}-write-dlq
+        MessageRetentionPeriod: 1209600 # 14 days in seconds
+
+    FileSystem:
+      Type: AWS::EFS::FileSystem
+      Properties:
+        BackupPolicy:
+          Status: DISABLED
+        FileSystemTags:
+          - Key: Name
+            Value: ${self:custom.name}-fs
+        PerformanceMode: generalPurpose
+        FileSystemPolicy:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Action:
+                - "elasticfilesystem:ClientMount"
+              Principal:
+                AWS: "*"
+
+    EfsSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        VpcId: vpc-4f28332d
+        GroupDescription: "mnt target sg"
+        SecurityGroupIngress:
+          - IpProtocol: -1
+            CidrIp: "0.0.0.0/0"
+        SecurityGroupEgress:
+          - IpProtocol: -1
+            CidrIp: "0.0.0.0/0"
+
+    EfsMountTarget1:
+      Type: AWS::EFS::MountTarget
+      Properties:
+        FileSystemId: !Ref FileSystem
+        SubnetId: subnet-7829023e
+        SecurityGroups:
+          - Ref: EfsSecurityGroup
+
+    EfsMountTarget2:
+      Type: AWS::EFS::MountTarget
+      Properties:
+        FileSystemId: !Ref FileSystem
+        SubnetId: subnet-c8816fad
+        SecurityGroups:
+          - Ref: EfsSecurityGroup
+
+    EfsMountTarget3:
+      Type: AWS::EFS::MountTarget
+      Properties:
+        FileSystemId: !Ref FileSystem
+        SubnetId: subnet-0fe4ef7b
+        SecurityGroups:
+          - Ref: EfsSecurityGroup
+
+    EfsAccessPoint:
+      Type: 'AWS::EFS::AccessPoint'
+      Properties:
+        FileSystemId: !Ref FileSystem
+        PosixUser:
+          Uid: "1000"
+          Gid: "1000"
+        RootDirectory:
+          CreationInfo:
+            OwnerGid: "1000"
+            OwnerUid: "1000"
+            Permissions: "0777"
+          Path: "/mnt/data"
