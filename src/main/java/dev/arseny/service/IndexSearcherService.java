@@ -20,7 +20,7 @@ public class IndexSearcherService {
 
             return searcher;
         } catch (IOException e) {
-            LOG.error("Error while trying to create an index writer for index " + indexName, e);
+            LOG.error("Error while trying to create an index searcher for index " + indexName, e);
             throw new RuntimeException(e);
         }
     }

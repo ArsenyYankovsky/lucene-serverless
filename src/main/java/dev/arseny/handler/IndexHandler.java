@@ -17,6 +17,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,20 +38,36 @@ public class IndexHandler implements RequestHandler<SQSEvent, APIGatewayProxyRes
             requests.add(RequestUtils.parseIndexRequest(record.getBody()));
         }
 
+        Map<String, IndexWriter> writerMap = new HashMap<>();
 
         for (IndexRequest request : requests) {
-            IndexWriter writer = indexWriterService.getIndexWriter(request.getIndexName());
+            IndexWriter writer;
+            if (writerMap.containsKey(request.getIndexName())) {
+                writer = writerMap.get(request.getIndexName());
+            } else {
+                writer = indexWriterService.getIndexWriter(request.getIndexName());
+                writerMap.put(request.getIndexName(), writer);
+            }
 
-            Document document = new Document();
+            List<Document> documents = new ArrayList<>();
 
             for (Map<String, Object> requestDocument : request.getDocuments()) {
+                Document document = new Document();
                 for (Map.Entry<String, Object> entry : requestDocument.entrySet()) {
                     document.add(new TextField(entry.getKey(), entry.getValue().toString(), Field.Store.YES));
                 }
+                documents.add(document);
             }
 
             try {
-                writer.addDocument(document);
+                writer.addDocuments(documents);
+            } catch (IOException e) {
+                LOG.error(e);
+            }
+        }
+
+        for (IndexWriter writer : writerMap.values()) {
+            try {
                 writer.commit();
                 writer.close();
             } catch (IOException e) {

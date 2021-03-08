@@ -6,23 +6,19 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import dev.arseny.RequestUtils;
 import dev.arseny.model.QueryRequest;
+import dev.arseny.model.QueryResponse;
 import dev.arseny.service.IndexSearcherService;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.*;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Named("query")
@@ -36,14 +32,15 @@ public class QueryHandler implements RequestHandler<APIGatewayProxyRequestEvent,
         QueryRequest queryRequest = RequestUtils.parseQueryRequest(event);
 
         QueryParser qp = new QueryParser("content", new StandardAnalyzer());
+
+        QueryResponse queryResponse = new QueryResponse();
+
         try {
             Query query = qp.parse(queryRequest.getQuery());
 
             IndexSearcher searcher = indexSearcherService.getIndexSearcher(queryRequest.getIndexName());
 
             TopDocs topDocs = searcher.search(query, 10);
-
-            List<Map<String, String>> results = new ArrayList<>();
 
             for (ScoreDoc scoreDocs : topDocs.scoreDocs) {
                 Document document = searcher.doc(scoreDocs.doc);
@@ -54,10 +51,14 @@ public class QueryHandler implements RequestHandler<APIGatewayProxyRequestEvent,
                     result.put(field.name(), field.stringValue());
                 }
 
-                results.add(result);
+                queryResponse.getDocuments().add(result);
             }
 
-            return RequestUtils.successResponse(results);
+            queryResponse.setTotalDocuments((topDocs.totalHits.relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO ? "≥" : "") + topDocs.totalHits.value);
+
+            searcher.getIndexReader().close();
+
+            return RequestUtils.successResponse(queryResponse);
         } catch (ParseException | IOException e) {
             e.printStackTrace();
 
