@@ -4,7 +4,6 @@ import dev.arseny.RequestUtils;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.store.SimpleFSLockFactory;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -17,7 +16,7 @@ public class IndexSearcherService {
 
     public IndexSearcher getIndexSearcher(String indexName) {
         try {
-            IndexSearcher searcher = new IndexSearcher(DirectoryReader.open(FSDirectory.open(Paths.get(IndexConstants.LUCENE_INDEX_ROOT_DIRECTORY + indexName), SimpleFSLockFactory.getDefault())));
+            IndexSearcher searcher = new IndexSearcher(DirectoryReader.open(FSDirectory.open(Paths.get(IndexConstants.LUCENE_INDEX_ROOT_DIRECTORY + indexName))));
 
             return searcher;
         } catch (IOException e) {

@@ -7,6 +7,7 @@ provider:
   region: eu-west-1 # TODO: replace with your region
   versionFunctions: false
   tracing: false
+  timeout: 15
   environment:
     stage: ${self:custom.stage}
     DISABLE_SIGNAL_HANDLERS: true

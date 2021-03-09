@@ -6,7 +6,6 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.NoDeletionPolicy;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.store.SimpleFSLockFactory;
 import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -21,7 +20,7 @@ public class IndexWriterService {
     public IndexWriter getIndexWriter(String indexName) {
         try {
             IndexWriter indexWriter = new IndexWriter(
-                    FSDirectory.open(Paths.get(IndexConstants.LUCENE_INDEX_ROOT_DIRECTORY + indexName), SimpleFSLockFactory.getDefault()),
+                    FSDirectory.open(Paths.get(IndexConstants.LUCENE_INDEX_ROOT_DIRECTORY + indexName)),
                     new IndexWriterConfig(new StandardAnalyzer())
                             .setIndexDeletionPolicy(NoDeletionPolicy.INSTANCE)
             );
