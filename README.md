@@ -3,8 +3,12 @@
 This project demonstrates a proof-of-concept serverless full-text search solution built with Apache Lucene and Quarkus framework.
 
 ✔️No servers
+
 ✔️No fixed costs
+
 ✔️Low (250-300ms) cold starts
+
+Please note that the project is not ready for production since I haven't tested it under a prolonged load and to be honest interfaces need to be nicer.
 
 ## Prerequisites
 - [Serverless framework >= 1.56.1](https://serverless.com/framework/docs/getting-started/)
@@ -19,6 +23,54 @@ This project demonstrates a proof-of-concept serverless full-text search solutio
 3. Don't forget to remove it if you're not planning to use it
    `sls remove`
 
+### Index a document
+
+URL: `https://<api-id>.execute-api.<region>.amazonaws.com/dev/index`
+
+HTTP method: POST
+
+Example request body:
+
+```json
+{
+  "indexName": "books",
+  "documents": [
+    {
+      "name": "The Foundation",
+      "author": "Isaac Asimov"
+    }
+  ]
+}
+```
+
+### Query documents
+
+URL: `https://<api-id>.execute-api.<region>.amazonaws.com/dev/query`
+
+HTTP method: POST
+
+Example request body:
+
+```json
+{
+   "indexName": "books",
+   "query": "author:isaac"
+}
+```
+
+Example response body:
+
+```json
+{
+  "totalDocuments": "1",
+  "documents": [
+    {
+      "author": "Isaac Asimov",
+      "name": "The Foundation"
+    }
+  ]
+}
+```
 
 ## Build native image
 `./mvn clean package`
