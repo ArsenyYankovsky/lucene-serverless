@@ -14,6 +14,7 @@ import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.*;
+import org.jboss.logging.Logger;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -23,6 +24,7 @@ import java.util.Map;
 
 @Named("query")
 public class QueryHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
+    private static final Logger LOG = Logger.getLogger(QueryHandler.class);
 
     @Inject
     protected IndexSearcherService indexSearcherService;
@@ -56,11 +58,9 @@ public class QueryHandler implements RequestHandler<APIGatewayProxyRequestEvent,
 
             queryResponse.setTotalDocuments((topDocs.totalHits.relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO ? "≥" : "") + topDocs.totalHits.value);
 
-            searcher.getIndexReader().close();
-
             return RequestUtils.successResponse(queryResponse);
         } catch (ParseException | IOException e) {
-            e.printStackTrace();
+            LOG.error(e);
 
             return RequestUtils.errorResponse(500, "Error");
         }

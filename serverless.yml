@@ -4,7 +4,7 @@ frameworkVersion: ">=1.56.1"
 
 provider:
   name: aws
-  region: eu-west-1 # TODO: replace with your region
+  region: eu-north-1 # TODO: replace with your region
   versionFunctions: false
   tracing: false
   timeout: 15
@@ -17,9 +17,9 @@ provider:
     securityGroupIds:
       - Ref: EfsSecurityGroup
     subnetIds:
-      - subnet-7829023e # TODO: replace with your VPC settings region
-      - subnet-c8816fad
-      - subnet-0fe4ef7b
+      - subnet-7a4b5702 # TODO: replace with your VPC settings region
+      - subnet-efd7e8a5
+      - subnet-486d9f21
 
 custom:
   name: ${self:custom.stage}-${self:service}
@@ -153,7 +153,7 @@ resources:
     EfsSecurityGroup:
       Type: AWS::EC2::SecurityGroup
       Properties:
-        VpcId: vpc-4f28332d # TODO: replace with your VPC settings region
+        VpcId: 	vpc-8aa25ee3 # TODO: replace with your VPC settings region
         GroupDescription: "mnt target sg"
         SecurityGroupIngress:
           - IpProtocol: -1
@@ -166,7 +166,7 @@ resources:
       Type: AWS::EFS::MountTarget
       Properties:
         FileSystemId: !Ref FileSystem
-        SubnetId: subnet-7829023e # TODO: replace with your VPC settings region
+        SubnetId: subnet-7a4b5702 # TODO: replace with your VPC settings region
         SecurityGroups:
           - Ref: EfsSecurityGroup
 
@@ -174,7 +174,7 @@ resources:
       Type: AWS::EFS::MountTarget
       Properties:
         FileSystemId: !Ref FileSystem
-        SubnetId: subnet-c8816fad # TODO: replace with your VPC settings region
+        SubnetId: subnet-efd7e8a5 # TODO: replace with your VPC settings region
         SecurityGroups:
           - Ref: EfsSecurityGroup
 
@@ -182,7 +182,7 @@ resources:
       Type: AWS::EFS::MountTarget
       Properties:
         FileSystemId: !Ref FileSystem
-        SubnetId: subnet-0fe4ef7b # TODO: replace with your VPC settings region
+        SubnetId: subnet-486d9f21 # TODO: replace with your VPC settings region
         SecurityGroups:
           - Ref: EfsSecurityGroup
 

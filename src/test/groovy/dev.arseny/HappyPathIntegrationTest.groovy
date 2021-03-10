@@ -15,7 +15,7 @@ class HappyPathIntegrationTest extends Specification {
     @Shared
     def client = LambdaClient.builder()
             .httpClient(ApacheHttpClient.builder().build())
-            .region(Region.EU_WEST_1).build()
+            .region(Region.EU_NORTH_1).build()
 
     private deleteTestIndex() {
         def response = client.invoke(InvokeRequest.builder()
