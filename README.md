@@ -8,7 +8,11 @@ This project demonstrates a proof-of-concept serverless full-text search solutio
 
 ✔️Low (250-300ms) cold starts
 
+⚠️Better deletion policy is required. Right now old segment files are not deleted as a simple workaround to handle concurrent reads and writes
+
 Please note that the project is not ready for production since I haven't tested it under a prolonged load and to be honest interfaces need to be nicer.
+
+Read the blog post about it [here](https://medium.com/@arsenyyankovski/serverless-full-text-search-with-aws-lambda-and-efs-cf24e1b6fe3b)
 
 ## Prerequisites
 - [Serverless framework >= 1.56.1](https://serverless.com/framework/docs/getting-started/)
