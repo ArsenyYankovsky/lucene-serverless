@@ -77,6 +77,4 @@ Example response body:
 ```
 
 ## Build native image
-`./mvn clean package`
-
-
+`./mvnw clean package`
