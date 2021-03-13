@@ -6,18 +6,19 @@ on:
       - main
   pull_request:
 
+env:
+  JAVA_VERSION: 15
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      JAVA_VERSION: 15
     steps:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Set up JDK
       uses: actions/setup-java@v1
       with:
-        java-version: 15
+        java-version: ${{env.JAVA_VERSION}}
     - name: Build
       run: ./mvnw package
     - name: Validate serverless
