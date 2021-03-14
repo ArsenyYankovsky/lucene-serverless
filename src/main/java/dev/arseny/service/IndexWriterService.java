@@ -18,14 +18,12 @@ import java.nio.file.Path;
 @ApplicationScoped
 public class IndexWriterService {
     private static final Logger LOG = Logger.getLogger(RequestUtils.class);
+    private S3FileSystemProvider s3FileSystemProvider = new S3FileSystemProvider();
 
     public IndexWriter getIndexWriter(String indexName) {
-
         String endpoint = "s3://s3.amazonaws.com/";
 
-        Path path = new S3FileSystemProvider().newFileSystem(URI.create(endpoint), System.getenv()).getPath("/" + System.getenv("BUCKET_NAME") + "/" + indexName);
-
-        LOG.info("path is " + path.toString());
+        Path path = this.s3FileSystemProvider.getFileSystem(URI.create(endpoint), System.getenv()).getPath("/" + System.getenv("BUCKET_NAME") + "/" + indexName);
 
         try {
             IndexWriter indexWriter = new IndexWriter(

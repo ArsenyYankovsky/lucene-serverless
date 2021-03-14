@@ -16,6 +16,8 @@ import java.nio.file.Path;
 public class IndexSearcherService {
     private static final Logger LOG = Logger.getLogger(RequestUtils.class);
 
+    private S3FileSystemProvider s3FileSystemProvider = new S3FileSystemProvider();
+
     private DirectoryReader directoryReader;
 
     public IndexSearcher getIndexSearcher(String indexName) {
@@ -24,7 +26,7 @@ public class IndexSearcherService {
 
             String endpoint = "s3://s3.amazonaws.com/";
 
-            Path path = new S3FileSystemProvider().newFileSystem(URI.create(endpoint), System.getenv()).getPath(IndexConstants.BUCKET_NAME + "/" + indexName);
+            Path path = this.s3FileSystemProvider.getFileSystem(URI.create(endpoint), System.getenv()).getPath("/" + System.getenv("BUCKET_NAME") + "/" + indexName);
 
             if (directoryReader == null) {
                 newDirectoryReader = DirectoryReader.open(FSDirectory.open(path));
