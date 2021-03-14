@@ -7,7 +7,7 @@
     <artifactId>lucene-serverless</artifactId>
     <version>1.0-SNAPSHOT</version>
     <properties>
-        <quarkus.version>1.11.4.Final</quarkus.version>
+        <quarkus.version>1.12.2.Final</quarkus.version>
         <lucene.version>8.4.1</lucene.version>
         <surefire-plugin.version>3.0.0-M4</surefire-plugin.version>
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
@@ -71,6 +71,20 @@
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>url-connection-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.upplication</groupId>
+            <artifactId>s3fs</artifactId>
+            <version>2.2.2</version>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-tika</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>1.25</version>
         </dependency>
         <dependency>
             <groupId>com.oracle.substratevm</groupId>

@@ -1,5 +1,6 @@
 package dev.arseny.service;
 
+import com.upplication.s3fs.S3FileSystemProvider;
 import dev.arseny.RequestUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexWriter;
@@ -10,7 +11,8 @@ import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.net.URI;
+import java.nio.file.Path;
 
 
 @ApplicationScoped
@@ -18,9 +20,16 @@ public class IndexWriterService {
     private static final Logger LOG = Logger.getLogger(RequestUtils.class);
 
     public IndexWriter getIndexWriter(String indexName) {
+
+        String endpoint = "s3://s3.amazonaws.com/";
+
+        Path path = new S3FileSystemProvider().newFileSystem(URI.create(endpoint), System.getenv()).getPath("/" + System.getenv("BUCKET_NAME") + "/" + indexName);
+
+        LOG.info("path is " + path.toString());
+
         try {
             IndexWriter indexWriter = new IndexWriter(
-                    FSDirectory.open(Paths.get(IndexConstants.LUCENE_INDEX_ROOT_DIRECTORY + indexName)),
+                    FSDirectory.open(path),
                     new IndexWriterConfig(new StandardAnalyzer())
                             .setIndexDeletionPolicy(NoDeletionPolicy.INSTANCE)
             );
