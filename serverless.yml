@@ -1,8 +1,8 @@
 service: lucene-serverless
+variablesResolutionMode: 20210326
 
 custom:
-  name: ${self:custom.stage}-${self:service}
-  stage: ${opt:stage, self:provider.stage}
+  name: ${sls:stage}-${self:service}
   region: ${opt:region, self:provider.region}
   vpcId: vpc-8aa25ee3 # TODO: replace with your VPC settings region
   subnetId1: subnet-efd7e8a5 # TODO: replace with your VPC settings region
@@ -18,7 +18,7 @@ provider:
   tracing: false
   timeout: 15
   environment:
-    stage: ${self:custom.stage}
+    stage: ${sls:stage}
     DISABLE_SIGNAL_HANDLERS: true
   iamRoleStatements:
     ${file(roleStatements.yml)}
@@ -39,7 +39,7 @@ functions:
     runtime: provided
     handler: native.handler
     events:
-      - http: POST query
+      - http: POST /query
     dependsOn:
       - EfsMountTarget1
       - EfsMountTarget2
@@ -53,7 +53,7 @@ functions:
       artifact: target/function.zip
     environment:
       QUARKUS_LAMBDA_HANDLER: query
-      QUARKUS_PROFILE: ${opt:stage, self:provider.stage}
+      QUARKUS_PROFILE: ${sls:stage}
 
   index:
     name: ${self:custom.name}-index
@@ -74,7 +74,7 @@ functions:
       artifact: target/function.zip
     environment:
       QUARKUS_LAMBDA_HANDLER: index
-      QUARKUS_PROFILE: ${opt:stage, self:provider.stage}
+      QUARKUS_PROFILE: ${sls:stage}
     events:
       - sqs:
           arn:
@@ -92,10 +92,10 @@ functions:
       securityGroupIds: [ ]
       subnetIds: [ ]
     events:
-      - http: POST index
+      - http: POST /index
     environment:
       QUARKUS_LAMBDA_HANDLER: enqueue-index
-      QUARKUS_PROFILE: ${opt:stage, self:provider.stage}
+      QUARKUS_PROFILE: ${sls:stage}
       QUEUE_URL:
         Ref: WriteQueue
 
@@ -116,7 +116,7 @@ functions:
       artifact: target/function.zip
     environment:
       QUARKUS_LAMBDA_HANDLER: deleteIndex
-      QUARKUS_PROFILE: ${opt:stage, self:provider.stage}
+      QUARKUS_PROFILE: ${sls:stage}
 
 resources:
   Resources:

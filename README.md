@@ -2,13 +2,13 @@
 
 This project demonstrates a proof-of-concept serverless full-text search solution built with Apache Lucene and Quarkus framework.
 
-✔️No servers
+✔️ No servers
 
-✔️No fixed costs
+✔️ No fixed costs
 
-✔️Low (250-300ms) cold starts
+✔️ Low (250-300ms) cold starts
 
-⚠️Better deletion policy is required. Right now old segment files are not deleted as a simple workaround to handle concurrent reads and writes
+⚠️ Better deletion policy is required. Right now old segment files are not deleted as a simple workaround to handle concurrent reads and writes
 
 Please note that the project is not ready for production since I haven't tested it under a prolonged load and to be honest interfaces need to be nicer.
 
