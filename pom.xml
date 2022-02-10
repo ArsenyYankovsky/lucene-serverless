@@ -106,13 +106,13 @@
         <dependency> <!-- enables mocking of classes (in addition to interfaces) -->
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
-            <version>1.10.10</version>
+            <version>1.12.7</version>
             <scope>test</scope>
         </dependency>
         <dependency> <!-- enables mocking of classes without default constructor (together with ByteBuddy or CGLIB) -->
             <groupId>org.objenesis</groupId>
             <artifactId>objenesis</artifactId>
-            <version>3.1</version>
+            <version>3.2</version>
             <scope>test</scope>
         </dependency>
         <dependency> <!-- only required if Hamcrest matchers are used -->
@@ -124,7 +124,7 @@
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
-            <version>1.1.1</version>
+            <version>1.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -151,7 +151,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>zip-assembly</id>
@@ -186,7 +186,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M4</version>
+                <version>3.0.0-M5</version>
                 <configuration>
                     <useFile>false</useFile>
                     <excludes>
