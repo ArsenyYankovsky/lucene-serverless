@@ -1,13 +1,13 @@
-package dev.arseny.handler;
+package au.qut.edu.eresearch.serverlesssearch.handler;
 
+import au.qut.edu.eresearch.serverlesssearch.RequestUtils;
+import au.qut.edu.eresearch.serverlesssearch.model.QueryRequest;
+import au.qut.edu.eresearch.serverlesssearch.model.QueryResponse;
+import au.qut.edu.eresearch.serverlesssearch.service.IndexSearcherService;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import dev.arseny.RequestUtils;
-import dev.arseny.model.QueryRequest;
-import dev.arseny.model.QueryResponse;
-import dev.arseny.service.IndexSearcherService;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexableField;

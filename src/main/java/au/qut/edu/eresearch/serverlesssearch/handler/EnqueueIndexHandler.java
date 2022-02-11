@@ -1,4 +1,4 @@
-package dev.arseny.handler;
+package au.qut.edu.eresearch.serverlesssearch.handler;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;

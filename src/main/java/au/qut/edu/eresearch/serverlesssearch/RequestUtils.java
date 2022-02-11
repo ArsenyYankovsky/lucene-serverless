@@ -1,12 +1,13 @@
-package dev.arseny;
+package au.qut.edu.eresearch.serverlesssearch;
 
+import au.qut.edu.eresearch.serverlesssearch.model.*;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import dev.arseny.model.*;
+import au.qut.edu.eresearch.serverlesssearch.model.*;
 import org.jboss.logging.Logger;
 
 import java.io.IOException;

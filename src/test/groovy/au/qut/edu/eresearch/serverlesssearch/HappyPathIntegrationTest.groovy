@@ -1,4 +1,4 @@
-package dev.arseny
+package au.qut.edu.eresearch.serverlesssearch
 
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper

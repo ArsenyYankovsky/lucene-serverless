@@ -1,4 +1,4 @@
-package dev.arseny.model;
+package au.qut.edu.eresearch.serverlesssearch.model;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 

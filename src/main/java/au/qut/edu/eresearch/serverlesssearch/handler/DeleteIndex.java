@@ -1,12 +1,12 @@
-package dev.arseny.handler;
+package au.qut.edu.eresearch.serverlesssearch.handler;
 
+import au.qut.edu.eresearch.serverlesssearch.RequestUtils;
+import au.qut.edu.eresearch.serverlesssearch.model.DeleteIndexRequest;
+import au.qut.edu.eresearch.serverlesssearch.service.IndexWriterService;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import dev.arseny.RequestUtils;
-import dev.arseny.model.DeleteIndexRequest;
-import dev.arseny.service.IndexWriterService;
 import org.apache.lucene.index.IndexWriter;
 import org.jboss.logging.Logger;
 

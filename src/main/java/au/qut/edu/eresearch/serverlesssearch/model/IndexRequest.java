@@ -1,4 +1,4 @@
-package dev.arseny.model;
+package au.qut.edu.eresearch.serverlesssearch.model;
 
 import java.util.List;
 import java.util.Map;

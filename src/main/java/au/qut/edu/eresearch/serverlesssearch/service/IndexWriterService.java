@@ -1,6 +1,6 @@
-package dev.arseny.service;
+package au.qut.edu.eresearch.serverlesssearch.service;
 
-import dev.arseny.RequestUtils;
+import au.qut.edu.eresearch.serverlesssearch.RequestUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;

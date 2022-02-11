@@ -1,4 +1,4 @@
-package dev.arseny.graalvm.substitutions;
+package au.qut.edu.eresearch.serverlesssearch.lucene;
 
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.SimpleFSDirectory;
