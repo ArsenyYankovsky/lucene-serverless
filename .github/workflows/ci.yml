@@ -21,4 +21,4 @@ jobs:
       with:
         java-version: ${{env.JAVA_VERSION}}
     - name: Build
-      run: ./mvnw package
+      run: ./mvnw package -Dnative
