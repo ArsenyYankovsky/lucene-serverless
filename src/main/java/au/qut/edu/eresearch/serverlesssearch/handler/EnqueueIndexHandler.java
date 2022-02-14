@@ -1,28 +1,40 @@
 package au.qut.edu.eresearch.serverlesssearch.handler;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
+import au.qut.edu.eresearch.serverlesssearch.model.IndexRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 
 import javax.inject.Inject;
-import javax.inject.Named;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
-@Named("enqueue-index")
-public class EnqueueIndexHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
-    protected String queueName = System.getenv("QUEUE_URL");
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
+
+@Path("/index")
+public class EnqueueIndexHandler {
+
+    @ConfigProperty(name = "queue.url")
+    String queueUrl;
 
     @Inject
     protected SqsClient sqsClient;
 
-    @Override
-    public APIGatewayProxyResponseEvent handleRequest(APIGatewayProxyRequestEvent event, Context context) {
-        this.sqsClient.sendMessage(SendMessageRequest.builder()
-                .messageBody(event.getBody())
-                .queueUrl(queueName).build());
+    private static final ObjectWriter INDEX_REQUEST_WRITER = new ObjectMapper().writerFor(IndexRequest.class);
 
-        return new APIGatewayProxyResponseEvent().withStatusCode(200);
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response handleRequest(IndexRequest indexRequest) throws Exception {
+
+        String message = INDEX_REQUEST_WRITER.writeValueAsString(indexRequest);
+        SendMessageResponse response = sqsClient.sendMessage(m -> m.queueUrl(queueUrl).messageBody(message));
+        return Response.ok().entity(response.messageId()).build();
+
+
     }
 }

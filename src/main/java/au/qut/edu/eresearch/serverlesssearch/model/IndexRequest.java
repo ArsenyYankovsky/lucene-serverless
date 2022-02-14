@@ -1,9 +1,13 @@
 package au.qut.edu.eresearch.serverlesssearch.model;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
 import java.util.List;
 import java.util.Map;
 
+@RegisterForReflection
 public class IndexRequest {
+
     private String indexName;
     private List<Map<String, Object>> documents;
 

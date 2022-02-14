@@ -1,4 +1,6 @@
-# Lucene Serverless
+#  Serverless Search
+
+GRAALVM_HOME=~/.sdkman/candidates/java/21.3.1.r17-grl mvn clean install -Dquarkus.package.type=native
 
 This project demonstrates a proof-of-concept serverless full-text search solution built with Apache Lucene and Quarkus framework.
 

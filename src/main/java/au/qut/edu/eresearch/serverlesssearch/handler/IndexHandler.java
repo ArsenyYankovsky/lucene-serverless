@@ -1,80 +1,93 @@
 package au.qut.edu.eresearch.serverlesssearch.handler;
 
-import au.qut.edu.eresearch.serverlesssearch.RequestUtils;
 import au.qut.edu.eresearch.serverlesssearch.model.IndexRequest;
-import au.qut.edu.eresearch.serverlesssearch.service.IndexWriterService;
-import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
-import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import au.qut.edu.eresearch.serverlesssearch.service.IndexService;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.jboss.logging.Logger;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.Message;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-@Named("index")
-public class IndexHandler implements RequestHandler<SQSEvent, APIGatewayProxyResponseEvent> {
-    private static final Logger LOG = Logger.getLogger(IndexHandler.class);
+import javax.ws.rs.Path;
+import javax.ws.rs.GET;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+@Path("/indexAsync")
+public class IndexHandler {
+
+    private static final Logger LOGGER = Logger.getLogger(IndexHandler.class);
 
     @Inject
-    protected IndexWriterService indexWriterService;
+    protected IndexService indexService;
 
-    @Override
-    public APIGatewayProxyResponseEvent handleRequest(SQSEvent event, Context context) {
-        List<SQSEvent.SQSMessage> records = event.getRecords();
+    @Inject
+    SqsClient sqs;
 
-        List<IndexRequest> requests = new ArrayList<>();
+    @ConfigProperty(name = "queue.url")
+    String queueUrl;
 
-        for (SQSEvent.SQSMessage record : records) {
-            requests.add(RequestUtils.parseIndexRequest(record.getBody()));
+    private static ObjectReader INDEX_REQUEST_READER = new ObjectMapper().readerFor(IndexRequest.class);
+
+    private static Function<String, IndexRequest> TO_INDEX_REQUEST = message -> {
+        try {
+            return INDEX_REQUEST_READER.readValue(message);
+        } catch (Exception e) {
+            LOGGER.error("Error decoding message", e);
+            throw new RuntimeException(e);
         }
+    };
 
+    @GET
+    public List<IndexRequest> processAsyncIndexRequests() {
+        List<Message> messages = sqs.receiveMessage(m -> m.maxNumberOfMessages(10).queueUrl(queueUrl)).messages();
+        List<IndexRequest> indexRequests = messages.stream().map(Message::body).map(TO_INDEX_REQUEST).collect(Collectors.toList());
         Map<String, IndexWriter> writerMap = new HashMap<>();
-
-        for (IndexRequest request : requests) {
+        for (IndexRequest indexRequest : indexRequests) {
             IndexWriter writer;
-            if (writerMap.containsKey(request.getIndexName())) {
-                writer = writerMap.get(request.getIndexName());
+            if (writerMap.containsKey(indexRequest.getIndexName())) {
+                writer = writerMap.get(indexRequest.getIndexName());
             } else {
-                writer = indexWriterService.getIndexWriter(request.getIndexName());
-                writerMap.put(request.getIndexName(), writer);
+                writer = indexService.getIndexWriter(indexRequest.getIndexName());
+                writerMap.put(indexRequest.getIndexName(), writer);
             }
-
             List<Document> documents = new ArrayList<>();
-
-            for (Map<String, Object> requestDocument : request.getDocuments()) {
+            for (Map<String, Object> requestDocument : indexRequest.getDocuments()) {
                 Document document = new Document();
                 for (Map.Entry<String, Object> entry : requestDocument.entrySet()) {
                     document.add(new TextField(entry.getKey(), entry.getValue().toString(), Field.Store.YES));
                 }
                 documents.add(document);
             }
-
             try {
                 writer.addDocuments(documents);
             } catch (IOException e) {
-                LOG.error(e);
+                LOGGER.error(e);
             }
         }
-
         for (IndexWriter writer : writerMap.values()) {
             try {
                 writer.commit();
                 writer.close();
             } catch (IOException e) {
-                LOG.error(e);
+                LOGGER.error(e);
             }
         }
-
-        return new APIGatewayProxyResponseEvent().withStatusCode(200);
+        return indexRequests;
     }
+
 }
