@@ -1,0 +1,47 @@
+  AWSTemplateFormatVersion: '2010-09-09'
+  Transform: AWS::Serverless-2016-10-31
+  Description: Serverless Search API
+  Globals:
+    Api:
+      EndpointConfiguration: REGIONAL
+      BinaryMediaTypes:
+        - "*/*"
+
+  Resources:
+
+    IndexQueue:
+      Type: AWS::SQS::Queue
+
+    ServerlessSearch:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+        Runtime: java11
+        CodeUri: target/function.zip
+        MemorySize: 512
+        Timeout: 15
+        Events:
+          HttpApiEvent:
+            Type: HttpApi
+          IndexEvent:
+            Type: SQS
+            Properties:
+              Queue: !GetAtt IndexQueue.Arn
+              BatchSize: 10
+        Environment:
+          Variables:
+            QUEUE_URL: !Ref IndexQueue
+        Policies:
+          - AWSLambdaBasicExecutionRole
+          - SQSPollerPolicy:
+              QueueName: !GetAtt IndexQueue.QueueName
+          - SQSSendMessagePolicy:
+              QueueName: !GetAtt IndexQueue.QueueName
+
+
+  Outputs:
+    ServerlessSearchApi:
+      Description: Server less search
+      Value: !Sub 'https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/'
+      Export:
+        Name: ServerlessSearchApi
