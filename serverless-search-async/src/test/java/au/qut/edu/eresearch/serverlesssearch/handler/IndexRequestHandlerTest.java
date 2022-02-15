@@ -3,17 +3,14 @@ package au.qut.edu.eresearch.serverlesssearch.handler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.tests.EventLoader;
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import org.junit.jupiter.api.Test;
-
-import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 
 @QuarkusTest
-@TestProfile(IndexRequestHandlerTest.IndexRequestHandlerProfile.class)
+@TestProfile(IndexRequestHandlerProfile.class)
 public class IndexRequestHandlerTest {
 
     @Test
@@ -29,12 +26,6 @@ public class IndexRequestHandlerTest {
                 .then()
                 .statusCode(200)
                 .body(is("\"Indexed 2 document(s) from 1 index request(s).\""));
-    }
-
-    public class IndexRequestHandlerProfile implements QuarkusTestProfile {
-        public Map<String, String> getConfigOverrides() {
-            return Map.of("quarkus.lambda.handler", "queue", "index.mount", "target/indexRequest/");
-        }
     }
 
 }

@@ -10,11 +10,12 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import org.jboss.logging.Logger;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-
+@Named("index")
 public class IndexRequestHandler implements RequestHandler<SQSEvent, String> {
 
     private static final Logger LOGGER = Logger.getLogger(IndexRequestHandler.class);

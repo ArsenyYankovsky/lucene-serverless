@@ -162,7 +162,7 @@
             OwnerGid: "1000"
             OwnerUid: "1000"
             Permissions: "0777"
-          Path: "/index"
+          Path: "/efs"
 
     IndexQueue:
       Type: AWS::SQS::Queue
@@ -184,14 +184,22 @@
             - !Ref MountTarget3Subnet
         FileSystemConfigs:
           - Arn: !GetAtt AccessPoint.Arn
-            LocalMountPath: /mnt/index
+            LocalMountPath: /mnt/efs
         Events:
-          HttpApiEvent:
+          ApiRoot:
             Type: HttpApi
+            Properties:
+              Path: /
+              Method: ANY
+          Api:
+            Type: HttpApi
+            Properties:
+              Path: /{proxy+}
+              Method: ANY
         Environment:
           Variables:
             QUEUE_URL: !Ref IndexQueue
-            INDEX_MOUNT: /mnt/index
+            INDEX_MOUNT: /mnt/efs
         Policies:
           - AWSLambdaBasicExecutionRole
           - SQSSendMessagePolicy:
@@ -217,7 +225,7 @@
             - !Ref MountTarget3Subnet
         FileSystemConfigs:
           - Arn: !GetAtt AccessPoint.Arn
-            LocalMountPath: /mnt/index
+            LocalMountPath: /mnt/efs
         Events:
           IndexEvent:
             Type: SQS
@@ -227,7 +235,7 @@
         Environment:
           Variables:
             QUEUE_URL: !Ref IndexQueue
-            INDEX_MOUNT: /mnt/data
+            INDEX_MOUNT: /mnt/efs
         Policies:
           - AWSLambdaBasicExecutionRole
           - SQSPollerPolicy:
@@ -235,11 +243,10 @@
           - EFSWriteAccessPolicy:
               FileSystem: !Ref FileSystem
               AccessPoint: !Ref AccessPoint
-
-
   Outputs:
+    ServerlessSearchApiDomain:
+      Description: 'API Gateway endpoint for DNS configuration'
+      Value: !Sub '${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com'
     ServerlessSearchApi:
-      Description: Server less search
+      Description: 'API Gateway endpoint URL for Prod stage'
       Value: !Sub 'https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/'
-      Export:
-        Name: ServerlessSearchApi
