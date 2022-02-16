@@ -149,36 +149,12 @@
                             </execution>
                         </executions>
                     </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <version>3.3.0</version>
-                        <executions>
-                            <execution>
-                                <id>zip-assembly</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>single</goal>
-                                </goals>
-                                <configuration>
-                                    <finalName>function</finalName>
-                                    <descriptors>
-                                        <descriptor>src/assembly/zip.xml</descriptor>
-                                    </descriptors>
-                                    <attach>false</attach>
-                                    <appendAssemblyId>false</appendAssemblyId>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
                 </plugins>
             </build>
             <properties>
                 <quarkus.package.type>native</quarkus.package.type>
-                <quarkus.native.builder-image>quay.io/quarkus/ubi-quarkus-mandrel:21.3.1.0-Final-java11</quarkus.native.builder-image>
                 <quarkus.native.container-build>true</quarkus.native.container-build>
                 <quarkus.native.container-runtime>docker</quarkus.native.container-runtime>
-                <quarkus.native.additional-build-args>-H:-CheckToolchain</quarkus.native.additional-build-args>
             </properties>
         </profile>
     </profiles>
