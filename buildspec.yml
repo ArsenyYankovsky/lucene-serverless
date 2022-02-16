@@ -1,0 +1,18 @@
+version: 0.2
+env:
+  variables:
+    NODE_OPTIONS: '--max-old-space-size=4096'
+phases:
+  install:
+    runtime-versions:
+      java: corretto11
+  pre_build:
+    commands:
+      - mkdir ~/.aws
+      - echo "[profile account-role]\nrole_arn = ${ACCOUNT_ROLE}\ncredential_source = EcsContainer" >> ~/.aws/config
+  build:
+    commands:
+      - echo Build started on `date`
+      - mvn clean install -Dnative=true
+      - sam deploy --profile account-role --stack-name $STACK_NAME --s3-bucket $LAMBDA_BUCKET_NAME --s3-prefix $ENV-$STACK_NAME --capabilities CAPABILITY_IAM --parameter-overrides VpcId=$VPC_ID MountTarget1Subnet=$SUBNET_ID_1 MountTarget2Subnet=$SUBNET_ID_2 MountTarget3Subnet=subnet-$SUBNET_ID_3
+
