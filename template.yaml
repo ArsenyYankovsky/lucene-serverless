@@ -182,8 +182,8 @@
     ApiHandler:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
-        Runtime: java11
+        Handler: not.used.in.provided.runtime
+        Runtime: provided
         CodeUri: serverless-search-api/target/function.zip
         MemorySize: 512
         Timeout: 15
@@ -212,6 +212,7 @@
           Variables:
             QUEUE_URL: !Ref IndexQueue
             INDEX_MOUNT: /mnt/efs/
+            DISABLE_SIGNAL_HANDLERS: true
         Policies:
           - AWSLambdaVPCAccessExecutionRole
           - SQSSendMessagePolicy:
@@ -223,11 +224,11 @@
     AsyncHandler:
       Type: AWS::Serverless::Function
       Properties:
-        Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
-        Runtime: java11
+        Handler: not.used.in.provided.runtime
+        Runtime: provided
         CodeUri: serverless-search-async/target/function.zip
-        MemorySize: 512
-        Timeout: 15
+        MemorySize: 128
+        Timeout: 90
         VpcConfig:
           SecurityGroupIds:
             - !Ref ApiSecurityGroup
@@ -248,6 +249,7 @@
           Variables:
             QUEUE_URL: !Ref IndexQueue
             INDEX_MOUNT: /mnt/efs/
+            DISABLE_SIGNAL_HANDLERS: true
         Policies:
           - AWSLambdaVPCAccessExecutionRole
           - SQSPollerPolicy:
