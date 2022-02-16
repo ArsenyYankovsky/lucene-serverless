@@ -1,6 +1,6 @@
-# Lucene Serverless
+#  Serverless Search
 
-This project demonstrates a proof-of-concept serverless full-text search solution built with Apache Lucene and Quarkus framework.
+An adaptation of Arseny Yankovsky lucene-serverless with the following aims
 
 ✔️ No servers
 
@@ -8,28 +8,37 @@ This project demonstrates a proof-of-concept serverless full-text search solutio
 
 ✔️ Low (250-300ms) cold starts
 
-⚠️ Better deletion policy is required. Right now old segment files are not deleted as a simple workaround to handle concurrent reads and writes
+✔️ Production Ready
 
-Please note that the project is not ready for production since I haven't tested it under a prolonged load and to be honest interfaces need to be nicer.
+Notable Changes
 
-Read the blog post about it [here](https://medium.com/@arsenyyankovski/serverless-full-text-search-with-aws-lambda-and-efs-cf24e1b6fe3b)
+* Refactor to support Java 17, the build environment will remain as Java 11 until Corretto 17 is available as a Lambda environment
+* Multi-module packaging that separates the core indexing service, rest api, and asynchronous processing of index requests
+* Replaced serverless with AWS SAM
 
 ## Prerequisites
-- [Serverless framework >= 1.56.1](https://serverless.com/framework/docs/getting-started/)
+- [Configure quarkus for native builds](https://quarkus.io/guides/building-native-image)
+- [Install the SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
 - AWS account
 
-## Run it
-1. Replace region, vpc id and subnets in the `serverless.yml` file
 
-2. Deploy the stack
-   `sls deploy`
+## Build native images
+`./mvnw clean install -Dquarkus.package.type=native`
 
-3. Don't forget to remove it if you're not planning to use it
-   `sls remove`
+## Deploy the stack
+
+```
+sam deploy --stack-name <stack_name> --s3-bucket <code_bucket> --capabilities CAPABILITY_IAM \
+--parameter-overrides VpcId=<VPC_ID> MountTarget1Subnet=<SUBNET_ID_1> MountTarget2Subnet=<SUBNET_ID_2> MountTarget3Subnet=subnet-<SUBNET_ID_3>
+```
+
+## Stack outputs
+
+ServerlessSearchApi: The REST API for the 
 
 ### Index a document
 
-URL: `https://<api-id>.execute-api.<region>.amazonaws.com/dev/index`
+URL: `https://<ServerlessSearchApi>/index`
 
 HTTP method: POST
 
@@ -76,5 +85,3 @@ Example response body:
 }
 ```
 
-## Build native image
-`./mvnw clean package`

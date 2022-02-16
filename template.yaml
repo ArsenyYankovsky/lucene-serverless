@@ -1,0 +1,266 @@
+  AWSTemplateFormatVersion: '2010-09-09'
+  Transform: AWS::Serverless-2016-10-31
+  Description: Serverless Search API
+  Parameters:
+    # FileSystem Parameters
+    Encryption:
+      Type: String
+      Description: Enable Encryption for the FileSystem?  (Default - true)
+      ConstraintDescription: Must be a boolean value (true / false)
+      AllowedValues:
+        - true
+        - false
+      Default: true
+
+    FileSystemName:
+      Type: String
+      Description: Name for tagging the EFS FileSystem (Default - CloudFormationStackNameFileSystem)
+      Default: " "
+
+    PerformanceMode:
+      Type: String
+      Description: What performance mode would you like? (Default - generalPurpose)
+      ConstraintDescription: generalPurpose and maxIO are the only valid options
+      AllowedValues:
+        - "generalPurpose"
+        - "maxIO"
+      Default: "generalPurpose"
+
+    ThroughputMode:
+      Type: String
+      Description: What throughput mode would you like to use?  (Default - bursting)
+      ConstraintDescription: The only valid options are bursting and provisioned
+      AllowedValues:
+        - "bursting"
+        - "provisioned"
+      Default: "bursting"
+
+    ProvisionedThroughputInMibps:
+      Type: String
+      Description: If provisioned ThroughputMode is selected above, this value will be used, otherwise it will be ignored. Must be a double.
+      AllowedPattern: ^[0-9]+\.[0-9]+$
+      Default: '0.0'
+
+    KmsKeyId:
+      # Format for the KMS Key Id can be one of the following:
+      # -----------------------------------------------------
+      # Key ID - A unique identifier of the key, for example, 1234abcd-12ab-34cd-56ef-1234567890ab.
+      # ARN - An Amazon Resource Name (ARN) for the key, for example, arn:aws:kms:us-west-2:111122223333:key/1234abcd-12ab-34cd-56ef-1234567890ab.
+      # Key alias - A previously created display name for a key. For example, alias/projectKey1.
+      # Key alias ARN - An ARN for a key alias, for example, arn:aws:kms:us-west-2:444455556666:alias/projectKey1.
+      Type: String
+      Description: Would you like to use a non-default KMS key?  (Provide key id, ARN, or alias)
+      Default: "None"
+
+    # Mount Target Parameters
+    VpcId:
+      Type: AWS::EC2::VPC::Id
+      Description: Which VPC would you like to use?
+
+    MountTarget1Subnet:
+      Type: AWS::EC2::Subnet::Id
+      Description: Which subnet would you like to use for your first Mount Target?
+
+    MountTarget2Subnet:
+      Type: AWS::EC2::Subnet::Id
+      Description: Which subnet would you like to use for your second Mount Target?
+
+    MountTarget3Subnet:
+      Type: AWS::EC2::Subnet::Id
+      Description: Which subnet would you like to use for your third Mount Target?
+
+    FileSharePort:
+      Type: Number
+      Description: Port to use for accessing the FileSystem via a Mount Target
+      Default: 2049 # NFS Default Port Number
+      MinValue: 1024
+      MaxValue: 65535
+
+
+
+  Conditions:
+
+    # FileSystem Conditions
+    hasFsTags:
+      !Not [!Equals [!Ref FileSystemName, " "]]
+
+    isEncrypted:
+      !Equals [!Ref Encryption, true]
+
+    noKmsKeyId:
+      !Equals [!Ref KmsKeyId, "None"]
+
+    provisionedThroughputMode:
+      !Equals [!Ref ThroughputMode, 'provisioned']
+
+    useDefaultCMK: !And
+      - Condition: isEncrypted
+      - Condition: noKmsKeyId
+
+
+  Globals:
+    Api:
+      EndpointConfiguration: REGIONAL
+      BinaryMediaTypes:
+        - "*/*"
+
+  Resources:
+
+
+    FileSystem:
+      Type: AWS::EFS::FileSystem
+      Properties:
+        Encrypted: !Ref Encryption
+        FileSystemTags:
+          - Key: Name
+            Value: !If [hasFsTags, !Ref FileSystemName, !Sub "${AWS::StackName}FileSystem"]
+        KmsKeyId: !If [useDefaultCMK, !Ref "AWS::NoValue", !Ref KmsKeyId]
+        PerformanceMode: !Ref PerformanceMode
+        ThroughputMode: !Ref ThroughputMode
+        ProvisionedThroughputInMibps: !If [provisionedThroughputMode, !Ref ProvisionedThroughputInMibps, !Ref 'AWS::NoValue']
+
+    MountTarget1:
+      Type: AWS::EFS::MountTarget
+      Properties:
+        FileSystemId: !Ref FileSystem
+        SubnetId: !Ref MountTarget1Subnet
+        SecurityGroups:
+          - !Ref MountTargetSecurityGroup
+
+    MountTarget2:
+      Type: AWS::EFS::MountTarget
+      Properties:
+        FileSystemId: !Ref FileSystem
+        SubnetId: !Ref MountTarget2Subnet
+        SecurityGroups:
+          - !Ref MountTargetSecurityGroup
+
+    MountTarget3:
+      Type: AWS::EFS::MountTarget
+      Properties:
+        FileSystemId: !Ref FileSystem
+        SubnetId: !Ref MountTarget3Subnet
+        SecurityGroups:
+          - !Ref MountTargetSecurityGroup
+
+    MountTargetSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: FileSystem Security Group
+        VpcId: !Ref VpcId
+        GroupName: !If [hasFsTags, !Join ["", [!Ref FileSystemName, "FileSystemSecurityGroup"]], !Join ["", [!Ref "AWS::StackName", "FileSystemSecurityGroup"]]]
+        SecurityGroupIngress:
+          - IpProtocol: -1
+            SourceSecurityGroupId: !Ref ApiSecurityGroup
+
+    ApiSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Api Security Group
+        VpcId: !Ref VpcId
+        GroupName: !If [hasFsTags, !Join ["", [!Ref FileSystemName, "ApiSecurityGroup"]], !Join ["", [!Ref "AWS::StackName", "ApiSecurityGroup"]]]
+
+
+
+    AccessPoint:
+      Type: 'AWS::EFS::AccessPoint'
+      Properties:
+        FileSystemId: !Ref FileSystem
+        PosixUser:
+          Uid: "1000"
+          Gid: "1000"
+        RootDirectory:
+          CreationInfo:
+            OwnerGid: "1000"
+            OwnerUid: "1000"
+            Permissions: "0777"
+          Path: "/efs"
+
+    IndexQueue:
+      Type: AWS::SQS::Queue
+
+    ApiHandler:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: not.used.in.provided.runtime
+        Runtime: provided
+        CodeUri: serverless-search-api/target/function.zip
+        MemorySize: 512
+        Timeout: 15
+        VpcConfig:
+          SecurityGroupIds:
+            - !Ref ApiSecurityGroup
+          SubnetIds:
+            - !Ref MountTarget1Subnet
+            - !Ref MountTarget2Subnet
+            - !Ref MountTarget3Subnet
+        FileSystemConfigs:
+          - Arn: !GetAtt AccessPoint.Arn
+            LocalMountPath: /mnt/efs
+        Events:
+          ApiRoot:
+            Type: HttpApi
+            Properties:
+              Path: /
+              Method: ANY
+          Api:
+            Type: HttpApi
+            Properties:
+              Path: /{proxy+}
+              Method: ANY
+        Environment:
+          Variables:
+            QUEUE_URL: !Ref IndexQueue
+            INDEX_MOUNT: /mnt/efs/
+            DISABLE_SIGNAL_HANDLERS: true
+        Policies:
+          - AWSLambdaVPCAccessExecutionRole
+          - SQSSendMessagePolicy:
+              QueueName: !GetAtt IndexQueue.QueueName
+          - EFSWriteAccessPolicy:
+              FileSystem: !Ref FileSystem
+              AccessPoint: !Ref AccessPoint
+
+    AsyncHandler:
+      Type: AWS::Serverless::Function
+      Properties:
+        Handler: not.used.in.provided.runtime
+        Runtime: provided
+        CodeUri: serverless-search-async/target/function.zip
+        MemorySize: 128
+        Timeout: 90
+        VpcConfig:
+          SecurityGroupIds:
+            - !Ref ApiSecurityGroup
+          SubnetIds:
+            - !Ref MountTarget1Subnet
+            - !Ref MountTarget2Subnet
+            - !Ref MountTarget3Subnet
+        FileSystemConfigs:
+          - Arn: !GetAtt AccessPoint.Arn
+            LocalMountPath: /mnt/efs
+        Events:
+          IndexEvent:
+            Type: SQS
+            Properties:
+              Queue: !GetAtt IndexQueue.Arn
+              BatchSize: 10
+        Environment:
+          Variables:
+            QUEUE_URL: !Ref IndexQueue
+            INDEX_MOUNT: /mnt/efs/
+            DISABLE_SIGNAL_HANDLERS: true
+        Policies:
+          - AWSLambdaVPCAccessExecutionRole
+          - SQSPollerPolicy:
+              QueueName: !GetAtt IndexQueue.QueueName
+          - EFSWriteAccessPolicy:
+              FileSystem: !Ref FileSystem
+              AccessPoint: !Ref AccessPoint
+  Outputs:
+    ServerlessSearchApiDomain:
+      Description: 'API Gateway endpoint for DNS configuration'
+      Value: !Sub '${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+    ServerlessSearchApi:
+      Description: 'API Gateway endpoint URL for Prod stage'
+      Value: !Sub 'https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/'
