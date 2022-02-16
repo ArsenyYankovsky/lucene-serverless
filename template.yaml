@@ -148,7 +148,19 @@
       Properties:
         GroupDescription: FileSystem Security Group
         VpcId: !Ref VpcId
-        GroupName: !If [hasFsTags, !Join ["", [!Ref FileSystemName, "SecurityGroup"]], !Join ["", [!Ref "AWS::StackName", "FileSystemSecurityGroup"]]]
+        GroupName: !If [hasFsTags, !Join ["", [!Ref FileSystemName, "FileSystemSecurityGroup"]], !Join ["", [!Ref "AWS::StackName", "FileSystemSecurityGroup"]]]
+        SecurityGroupIngress:
+          - IpProtocol: -1
+            SourceSecurityGroupId: !Ref ApiSecurityGroup
+
+    ApiSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Api Security Group
+        VpcId: !Ref VpcId
+        GroupName: !If [hasFsTags, !Join ["", [!Ref FileSystemName, "ApiSecurityGroup"]], !Join ["", [!Ref "AWS::StackName", "ApiSecurityGroup"]]]
+
+
 
     AccessPoint:
       Type: 'AWS::EFS::AccessPoint'
@@ -177,7 +189,7 @@
         Timeout: 15
         VpcConfig:
           SecurityGroupIds:
-            - !Ref MountTargetSecurityGroup
+            - !Ref ApiSecurityGroup
           SubnetIds:
             - !Ref MountTarget1Subnet
             - !Ref MountTarget2Subnet
@@ -199,9 +211,9 @@
         Environment:
           Variables:
             QUEUE_URL: !Ref IndexQueue
-            INDEX_MOUNT: /mnt/efs
+            INDEX_MOUNT: /mnt/efs/
         Policies:
-          - AWSLambdaBasicExecutionRole
+          - AWSLambdaVPCAccessExecutionRole
           - SQSSendMessagePolicy:
               QueueName: !GetAtt IndexQueue.QueueName
           - EFSWriteAccessPolicy:
@@ -218,7 +230,7 @@
         Timeout: 15
         VpcConfig:
           SecurityGroupIds:
-            - !Ref MountTargetSecurityGroup
+            - !Ref ApiSecurityGroup
           SubnetIds:
             - !Ref MountTarget1Subnet
             - !Ref MountTarget2Subnet
@@ -235,9 +247,9 @@
         Environment:
           Variables:
             QUEUE_URL: !Ref IndexQueue
-            INDEX_MOUNT: /mnt/efs
+            INDEX_MOUNT: /mnt/efs/
         Policies:
-          - AWSLambdaBasicExecutionRole
+          - AWSLambdaVPCAccessExecutionRole
           - SQSPollerPolicy:
               QueueName: !GetAtt IndexQueue.QueueName
           - EFSWriteAccessPolicy:
