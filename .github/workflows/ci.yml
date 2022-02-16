@@ -27,3 +27,4 @@ jobs:
       with:
         artifacts: "template.yaml,serverless-search-async/target/function.zip,serverless-search-api/target/function.zip"
         token: ${{ secrets.GITHUB_TOKEN }}
+        tag: ${{ github.head_ref }}
