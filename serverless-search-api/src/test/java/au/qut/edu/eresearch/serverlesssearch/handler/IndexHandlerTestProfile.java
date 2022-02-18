@@ -14,7 +14,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ApiTestProfile implements QuarkusTestProfile {
+public class IndexHandlerTestProfile implements QuarkusTestProfile {
 
     private DockerImageName localstackImage = DockerImageName.parse("localstack/localstack:latest");
 

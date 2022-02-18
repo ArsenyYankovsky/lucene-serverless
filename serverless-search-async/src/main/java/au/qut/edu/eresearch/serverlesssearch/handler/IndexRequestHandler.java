@@ -38,7 +38,7 @@ public class IndexRequestHandler implements RequestHandler<SQSEvent, String> {
     public String handleRequest(SQSEvent sqsEvent, Context context) {
         List<IndexRequest> indexRequests = sqsEvent.getRecords().stream().map(SQSEvent.SQSMessage::getBody).map(TO_INDEX_REQUEST).collect(Collectors.toList());
         LOGGER.infof("Received %d index request(s).", indexRequests.size());
-        int documentsIndexed = indexService.index(indexRequests);
-        return String.format("Indexed %d document(s) from %d index request(s).", documentsIndexed, indexRequests.size());
+        indexService.index(indexRequests);
+        return String.format("Processed %d index request(s).", indexRequests.size());
     }
 }

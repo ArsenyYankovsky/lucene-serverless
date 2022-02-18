@@ -25,7 +25,7 @@ public class IndexRequestHandlerTest {
                 .post()
                 .then()
                 .statusCode(200)
-                .body(is("\"Indexed 2 document(s) from 1 index request(s).\""));
+                .body(is("\"Processed 1 index request(s).\""));
     }
 
 }

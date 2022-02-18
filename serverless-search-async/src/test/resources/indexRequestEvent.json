@@ -3,7 +3,7 @@
     {
       "messageId" : "MessageID_1",
       "receiptHandle" : "MessageReceiptHandle",
-      "body" : "{\n    \"documents\": [{\"firstName\":  \"Don\", \"surname\":  \"Johnson\"}, {\"firstName\":  \"Don\", \"surname\":  \"Draper\"}]\n  }",
+      "body" : "{\n        \"indexName\": \"async\", \"document\":  {\"firstName\":  \"Don\", \"surname\":  \"Johnson\"}, \"id\":  \"djohnson\"\n      }",
       "md5OfBody" : "fce0ea8dd236ccb3ed9b37dae260836f",
       "md5OfMessageAttributes" : "582c92c5c5b6ac403040a4f3ab3115c9",
       "eventSourceARN": "arn:aws:sqs:us-west-2:123456789012:SQSQueue",
@@ -18,7 +18,9 @@
       "messageAttributes" : {
 
       }
+
     }
   ]
 }
+
 
