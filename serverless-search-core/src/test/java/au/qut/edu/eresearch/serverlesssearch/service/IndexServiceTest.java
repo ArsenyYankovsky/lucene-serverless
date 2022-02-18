@@ -101,4 +101,44 @@ public class IndexServiceTest {
 
     }
 
+    @Test
+    public void indexAndQueryAll() throws Exception {
+
+        // given
+        String index = UUID.randomUUID().toString();
+        List<IndexRequest> indexRequests = List.of(
+                new IndexRequest()
+                        .setIndexName(index)
+                        .setDocument(
+                                Map.of("firstName", "Donald",
+                                        "lastName", "Trump")
+                        ),
+                new IndexRequest()
+                        .setIndexName(index)
+                        .setDocument(
+                                Map.of("firstName", "Donald",
+                                        "lastName", "Duck")
+                        )
+
+        );
+        indexService.index(indexRequests);
+
+        // when
+        SearchResults results = indexService
+                .query(new SearchRequest().setIndexName(index).setQuery("donald"));
+
+        // then
+        Assertions.assertEquals(
+                new SearchResults()
+                        .setDocuments(List.of(
+                                Map.of("firstName", "Donald",
+                                        "lastName", "Trump"),
+                                Map.of("firstName", "Donald",
+                                        "lastName", "Duck")
+                        )).setTotalHits(new TotalHits(2, TotalHits.Relation.EQUAL_TO)),
+                results);
+
+
+    }
+
 }
