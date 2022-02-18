@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - ERE-1670
   pull_request:
 
 env:
@@ -21,3 +22,11 @@ jobs:
         java-version: ${{env.JAVA_VERSION}}
     - name: Build
       run: ./mvnw package -Dnative
+    - name: Distribution
+      uses: actions/upload-artifact@v2
+      with:
+        name: distribution
+        path: |
+          template.yaml
+          serverless-search-api/target/function.zip
+          serverless-search-async/target/function.zip    
