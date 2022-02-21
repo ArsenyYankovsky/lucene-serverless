@@ -160,8 +160,6 @@
         VpcId: !Ref VpcId
         GroupName: !If [hasFsTags, !Join ["", [!Ref FileSystemName, "ApiSecurityGroup"]], !Join ["", [!Ref "AWS::StackName", "ApiSecurityGroup"]]]
 
-
-
     AccessPoint:
       Type: 'AWS::EFS::AccessPoint'
       Properties:
@@ -178,6 +176,18 @@
 
     IndexQueue:
       Type: AWS::SQS::Queue
+      Properties:
+        QueueName: IndexQueue.fifo
+        FifoQueue: true
+        RedrivePolicy:
+          deadLetterTargetArn: !GetAtt IndexDeadLeterQueue.Arn
+          maxReceiveCount: 3
+
+    IndexDeadLeterQueue:
+      Type: AWS::SQS::Queue # More info about SQS Resource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-sqs-queues.html
+      Properties:
+        QueueName: IndexDeadLeterQueue.fifo
+        FifoQueue: true
 
     ApiHandler:
       Type: AWS::Serverless::Function
@@ -228,7 +238,8 @@
         Runtime: provided
         CodeUri: serverless-search-async/target/function.zip
         MemorySize: 128
-        Timeout: 90
+        Timeout: 15
+        ReservedConcurrentExecutions: 1
         VpcConfig:
           SecurityGroupIds:
             - !Ref ApiSecurityGroup
