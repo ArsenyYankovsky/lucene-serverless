@@ -17,7 +17,7 @@ import java.util.Map;
 public class SearchResults {
 
     private TotalHits totalHits;
-    private List<Map<String, String>> documents = new ArrayList<>();
+    private List<Map<String, Object>> documents = new ArrayList<>();
 
 
 }

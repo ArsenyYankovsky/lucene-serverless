@@ -92,7 +92,7 @@ public class IndexServiceTest {
         // then
         Assertions.assertEquals(
                 new SearchResults()
-                        .setDocuments(List.of(Map.of("_id", id, "firstName", "James",
+                        .setDocuments(List.of(Map.of("firstName", "James",
                                         "lastName", "Dean"
                                 ))
                         ).setTotalHits(new TotalHits(1, TotalHits.Relation.EQUAL_TO)),
@@ -136,6 +136,40 @@ public class IndexServiceTest {
                                 Map.of("firstName", "Donald",
                                         "lastName", "Duck")
                         )).setTotalHits(new TotalHits(2, TotalHits.Relation.EQUAL_TO)),
+                results);
+
+
+    }
+
+
+    @Test
+    public void indexAndQueryNested() throws Exception {
+
+        // given
+        String index = UUID.randomUUID().toString();
+        List<IndexRequest> indexRequests = List.of(
+                new IndexRequest()
+                        .setIndexName(index)
+                        .setDocument(
+                                Map.of("person", Map.of("firstName", "Calvin", "lastName", "Coolridge"))
+                        ),
+                new IndexRequest()
+                        .setIndexName(index)
+                        .setDocument(
+                                Map.of("person", Map.of("firstName", "William", "lastName", "Harrison"))
+                        )
+        );
+        indexService.index(indexRequests);
+
+        // when
+        SearchResults results = indexService
+                .query(new SearchRequest().setIndexName(index).setQuery("person.firstName:Calvin"));
+
+        // then
+        Assertions.assertEquals(
+                new SearchResults()
+                        .setDocuments(List.of(
+                                        Map.of("person", Map.of("firstName", "Calvin", "lastName", "Coolridge")))).setTotalHits(new TotalHits(1, TotalHits.Relation.EQUAL_TO)),
                 results);
 
 

@@ -4,6 +4,11 @@ import au.qut.edu.eresearch.serverlesssearch.model.DeleteIndexRequest;
 import au.qut.edu.eresearch.serverlesssearch.model.IndexRequest;
 import au.qut.edu.eresearch.serverlesssearch.model.SearchRequest;
 import au.qut.edu.eresearch.serverlesssearch.model.SearchResults;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.wnameless.json.base.JacksonJsonValue;
+import com.github.wnameless.json.flattener.JsonFlattener;
+import com.github.wnameless.json.unflattener.JsonUnflattener;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -37,6 +42,8 @@ public class IndexService {
 
     private static final Logger LOGGER = Logger.getLogger(IndexService.class);
 
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     public SearchResults query(SearchRequest queryRequest) {
         QueryParser qp = new QueryParser(AllField.FIELD_NAME, new StandardAnalyzer());
         SearchResults queryResponse = new SearchResults();
@@ -46,10 +53,8 @@ public class IndexService {
             TopDocs topDocs = searcher.search(query, 10);
             for (ScoreDoc scoreDocs : topDocs.scoreDocs) {
                 Document document = searcher.doc(scoreDocs.doc);
-                Map<String, String> result = new HashMap<>();
-                for (IndexableField field : document.getFields()) {
-                    result.put(field.name(), field.stringValue());
-                }
+                String source = document.get(SourceField.FIELD_NAME);
+                Map<String, Object> result = JsonUnflattener.unflattenAsMap(source);
                 queryResponse.getDocuments().add(result);
             }
             queryResponse.setTotalHits(topDocs.totalHits);
@@ -71,8 +76,13 @@ public class IndexService {
                 writerMap.put(indexRequest.getIndexName(), writer);
             }
             Document document = new Document();
-            for (Map.Entry<String, Object> entry : indexRequest.getDocument().entrySet()) {
-                document.add(new TextField(entry.getKey(), entry.getValue().toString(), Field.Store.YES));
+            JsonNode jsonNode = objectMapper.convertValue(indexRequest.getDocument(), JsonNode.class);
+            JacksonJsonValue jacksonJsonValue = new JacksonJsonValue(jsonNode);
+            String source = JsonFlattener.flatten(jacksonJsonValue);
+            Map<String, Object> flattened = JsonFlattener.flattenAsMap(jacksonJsonValue);
+            document.add(new SourceField(source));
+            for (Map.Entry<String, Object> entry : flattened.entrySet()) {
+                document.add(new TextField(entry.getKey(), entry.getValue().toString(), Field.Store.NO));
                 document.add(new AllField(entry.getValue().toString()));
             }
             try {
