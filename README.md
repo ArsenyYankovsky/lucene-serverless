@@ -26,3 +26,155 @@ sam deploy --stack-name <stack_name> --s3-bucket <code_bucket> --capabilities CA
 ## Stack outputs
 
 ServerlessSearchApi: The REST API Endpoint
+
+## Open API 
+
+```
+---
+openapi: 3.0.3
+info:
+  title: serverless-search-api API
+  version: 1.0-SNAPSHOT
+paths:
+  /health:
+    get:
+      tags:
+      - Health Handler
+      responses:
+        "200":
+          description: OK
+  /{index}/_doc:
+    post:
+      tags:
+      - Index Handler
+      parameters:
+      - name: index
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+      responses:
+        "200":
+          description: OK
+  /{index}/_doc/{id}:
+    put:
+      tags:
+      - Index Handler
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: index
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+      responses:
+        "200":
+          description: OK
+    post:
+      tags:
+      - Index Handler
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: index
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+      responses:
+        "200":
+          description: OK
+  /{index}/_search:
+    get:
+      tags:
+      - Search Handler
+      parameters:
+      - name: index
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: q
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResults'
+components:
+  schemas:
+    Hit:
+      type: object
+      properties:
+        _index:
+          type: string
+        _type:
+          type: string
+        _id:
+          type: string
+        _score:
+          format: float
+          type: number
+        _source:
+          type: object
+          additionalProperties:
+            type: object
+    Hits:
+      type: object
+      properties:
+        total:
+          $ref: '#/components/schemas/Total'
+        hits:
+          type: array
+          items:
+            $ref: '#/components/schemas/Hit'
+    SearchResults:
+      type: object
+      properties:
+        took:
+          format: int64
+          type: integer
+        hits:
+          $ref: '#/components/schemas/Hits'
+    Total:
+      type: object
+      properties:
+        value:
+          format: int64
+          type: integer
+        relation:
+          type: string
+
+```
