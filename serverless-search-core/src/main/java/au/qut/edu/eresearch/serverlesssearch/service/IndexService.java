@@ -48,9 +48,9 @@ public class IndexService {
         try {
             Query query = qp.parse(queryRequest.getQuery());
             IndexSearcher searcher = getIndexSearcher(queryRequest.getIndexName());
-            long start = 0;
+            long start = System.currentTimeMillis();
             TopDocs topDocs = searcher.search(query, 10);
-            long end = 0;
+            long end = System.currentTimeMillis();
             for (ScoreDoc scoreDocs : topDocs.scoreDocs) {
                 Document document = searcher.doc(scoreDocs.doc);
                 String sourceField = document.get(SourceField.FIELD_NAME);
