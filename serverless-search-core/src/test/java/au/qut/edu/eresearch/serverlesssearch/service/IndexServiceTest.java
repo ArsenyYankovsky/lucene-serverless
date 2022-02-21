@@ -1,11 +1,8 @@
 package au.qut.edu.eresearch.serverlesssearch.service;
 
-import au.qut.edu.eresearch.serverlesssearch.model.IndexRequest;
-import au.qut.edu.eresearch.serverlesssearch.model.SearchRequest;
-import au.qut.edu.eresearch.serverlesssearch.model.SearchResults;
+import au.qut.edu.eresearch.serverlesssearch.model.*;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import org.apache.lucene.search.TotalHits;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -50,14 +47,19 @@ public class IndexServiceTest {
 
         // then
         Assertions.assertEquals(
-                new SearchResults()
-                        .setDocuments(List.of(Map.of("firstName", "James",
-                                        "lastName", "Cagney"),
-                                Map.of("firstName", "James",
-                                        "lastName", "Cagney"))
-                        ).setTotalHits(new TotalHits(2, TotalHits.Relation.EQUAL_TO)),
-                results);
-
+                List.of(
+                        new Hit().setSource(
+                                        Map.of("firstName", "James",
+                                                "lastName", "Cagney"))
+                                .setIndex(index)
+                                .setScore(0.082873434f),
+                        new Hit().setSource(
+                                        Map.of("firstName", "James",
+                                                "lastName", "Cagney"))
+                                .setIndex(index)
+                                .setScore(0.082873434f)
+                ),
+                results.getHits().getHits());
 
     }
 
@@ -91,15 +93,21 @@ public class IndexServiceTest {
 
         // then
         Assertions.assertEquals(
-                new SearchResults()
-                        .setDocuments(List.of(Map.of("firstName", "James",
-                                        "lastName", "Dean"
-                                ))
-                        ).setTotalHits(new TotalHits(1, TotalHits.Relation.EQUAL_TO)),
-                results);
+                new Hits()
+                        .setTotal(new Total().setValue(1).setRelation("eq"))
+                        .setHits(List.of(
+                                new Hit().setSource(
+                                                Map.of("firstName", "James",
+                                                        "lastName", "Dean"))
+                                        .setIndex(index)
+                                        .setScore(0.13076457f)
+                                        .setId(id)
+                        )),
+                results.getHits());
 
 
     }
+
 
     @Test
     public void indexAndQueryAll() throws Exception {
@@ -127,16 +135,25 @@ public class IndexServiceTest {
         SearchResults results = indexService
                 .query(new SearchRequest().setIndexName(index).setQuery("donald"));
 
+
         // then
         Assertions.assertEquals(
-                new SearchResults()
-                        .setDocuments(List.of(
-                                Map.of("firstName", "Donald",
-                                        "lastName", "Trump"),
-                                Map.of("firstName", "Donald",
-                                        "lastName", "Duck")
-                        )).setTotalHits(new TotalHits(2, TotalHits.Relation.EQUAL_TO)),
-                results);
+                new Hits()
+                        .setTotal(new Total().setValue(2).setRelation("eq"))
+                        .setHits(
+                                List.of(
+                                        new Hit().setSource(
+                                                        Map.of("firstName", "Donald",
+                                                                "lastName", "Trump"))
+                                                .setIndex(index)
+                                                .setScore(0.082873434f),
+                                        new Hit().setSource(
+                                                        Map.of("firstName", "Donald",
+                                                                "lastName", "Duck"))
+                                                .setIndex(index)
+                                                .setScore(0.082873434f)
+                                )),
+                results.getHits());
 
 
     }
@@ -167,11 +184,16 @@ public class IndexServiceTest {
 
         // then
         Assertions.assertEquals(
-                new SearchResults()
-                        .setDocuments(List.of(
-                                        Map.of("person", Map.of("firstName", "Calvin", "lastName", "Coolridge")))).setTotalHits(new TotalHits(1, TotalHits.Relation.EQUAL_TO)),
-                results);
-
+                new Hits()
+                        .setTotal(new Total().setValue(1).setRelation("eq"))
+                        .setHits(
+                List.of(
+                        new Hit().setSource(
+                                        Map.of("person", Map.of("firstName", "Calvin", "lastName", "Coolridge")))
+                                .setIndex(index)
+                                .setScore(0.31506687f)
+                )),
+                results.getHits());
 
     }
 

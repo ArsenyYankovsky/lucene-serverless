@@ -9,12 +9,10 @@ import lombok.experimental.Accessors;
 @Data
 @NoArgsConstructor
 @Accessors(chain = true)
-public class SearchResults {
+public class Total {
 
-    private long took;
+    private long value;
 
-    private Hits hits = new Hits();
-
-
+    private String relation;
 
 }

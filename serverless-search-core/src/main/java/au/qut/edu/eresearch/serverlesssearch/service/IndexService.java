@@ -1,9 +1,6 @@
 package au.qut.edu.eresearch.serverlesssearch.service;
 
-import au.qut.edu.eresearch.serverlesssearch.model.DeleteIndexRequest;
-import au.qut.edu.eresearch.serverlesssearch.model.IndexRequest;
-import au.qut.edu.eresearch.serverlesssearch.model.SearchRequest;
-import au.qut.edu.eresearch.serverlesssearch.model.SearchResults;
+import au.qut.edu.eresearch.serverlesssearch.model.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.wnameless.json.base.JacksonJsonValue;
@@ -31,6 +28,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @ApplicationScoped
 public class IndexService {
@@ -46,19 +44,30 @@ public class IndexService {
 
     public SearchResults query(SearchRequest queryRequest) {
         QueryParser qp = new QueryParser(AllField.FIELD_NAME, new StandardAnalyzer());
-        SearchResults queryResponse = new SearchResults();
+        SearchResults searchResults = new SearchResults();
         try {
             Query query = qp.parse(queryRequest.getQuery());
             IndexSearcher searcher = getIndexSearcher(queryRequest.getIndexName());
+            long start = 0;
             TopDocs topDocs = searcher.search(query, 10);
+            long end = 0;
             for (ScoreDoc scoreDocs : topDocs.scoreDocs) {
                 Document document = searcher.doc(scoreDocs.doc);
-                String source = document.get(SourceField.FIELD_NAME);
-                Map<String, Object> result = JsonUnflattener.unflattenAsMap(source);
-                queryResponse.getDocuments().add(result);
+                String sourceField = document.get(SourceField.FIELD_NAME);
+                Map<String, Object> source = JsonUnflattener.unflattenAsMap(sourceField);
+                searchResults.getHits().getHits().add(new Hit()
+                        .setSource(source)
+                        .setScore(scoreDocs.score)
+                        .setIndex(queryRequest.getIndexName())
+                        .setId(document.get(ID_TERM))
+                );
             }
-            queryResponse.setTotalHits(topDocs.totalHits);
-            return queryResponse;
+            searchResults
+                    .setTook(end - start)
+                    .getHits().getTotal()
+                    .setValue(topDocs.totalHits.value)
+                    .setRelation(topDocs.totalHits.relation == topDocs.totalHits.relation.EQUAL_TO ? "eq" : "gte");
+            return searchResults;
         } catch (ParseException | IOException e) {
             LOGGER.error(e);
             throw new RuntimeException(e);
@@ -90,6 +99,7 @@ public class IndexService {
                     document.add(new StringField(ID_TERM, indexRequest.getId(), Field.Store.YES));
                     writer.updateDocument(new Term(ID_TERM, indexRequest.getId()), document);
                 } else {
+                    document.add(new StringField(ID_TERM, UUID.randomUUID().toString(), Field.Store.YES));
                     writer.addDocument(document);
                 }
             } catch (IOException e) {

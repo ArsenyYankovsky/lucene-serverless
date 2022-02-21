@@ -1,11 +1,9 @@
 package au.qut.edu.eresearch.serverlesssearch.handler;
 
-import au.qut.edu.eresearch.serverlesssearch.model.IndexRequest;
-import au.qut.edu.eresearch.serverlesssearch.model.SearchResults;
+import au.qut.edu.eresearch.serverlesssearch.model.*;
 import au.qut.edu.eresearch.serverlesssearch.service.IndexService;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
-import org.apache.lucene.search.TotalHits;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -37,8 +35,15 @@ public class SearchHandlerTest {
 
         indexService.index(indexRequests);
         SearchResults expected = new SearchResults()
-                .setTotalHits(new TotalHits(1, TotalHits.Relation.EQUAL_TO))
-                .setDocuments(List.of(Map.of("firstName", "Don", "lastName", "Draper")));
+                .setHits(new Hits()
+                        .setTotal(new Total().setValue(1).setRelation("eq"))
+                        .setHits(
+                                List.of(
+                                        new Hit().setSource(
+                                                        Map.of("person", Map.of("firstName", "Calvin", "lastName", "Coolridge")))
+                                                .setIndex("searchable")
+                                                .setScore(0.31506687f)
+                                )));
 
         given()
                 .contentType("application/json")
@@ -47,8 +52,9 @@ public class SearchHandlerTest {
                 .when()
                 .get("/searchable/_search")
                 .then()
+                .log().body()
                 .statusCode(200)
-                .body("documents[0].lastName", equalTo("Draper"));
+                .body("hits.hits[0]._source.lastName", equalTo("Draper"));
     }
 
 
