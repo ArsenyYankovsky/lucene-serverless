@@ -52,11 +52,13 @@ public class IndexServiceTest {
                                         Map.of("firstName", "James",
                                                 "lastName", "Cagney"))
                                 .setIndex(index)
+                                .setId(results.getHits().getHits().get(0).getId())
                                 .setScore(0.082873434f),
                         new Hit().setSource(
                                         Map.of("firstName", "James",
                                                 "lastName", "Cagney"))
                                 .setIndex(index)
+                                .setId(results.getHits().getHits().get(1).getId())
                                 .setScore(0.082873434f)
                 ),
                 results.getHits().getHits());
@@ -117,12 +119,14 @@ public class IndexServiceTest {
         List<IndexRequest> indexRequests = List.of(
                 new IndexRequest()
                         .setIndexName(index)
+                        .setId("dt")
                         .setDocument(
                                 Map.of("firstName", "Donald",
                                         "lastName", "Trump")
                         ),
                 new IndexRequest()
                         .setIndexName(index)
+                        .setId("dd")
                         .setDocument(
                                 Map.of("firstName", "Donald",
                                         "lastName", "Duck")
@@ -146,11 +150,13 @@ public class IndexServiceTest {
                                                         Map.of("firstName", "Donald",
                                                                 "lastName", "Trump"))
                                                 .setIndex(index)
+                                                .setId("dt")
                                                 .setScore(0.082873434f),
                                         new Hit().setSource(
                                                         Map.of("firstName", "Donald",
                                                                 "lastName", "Duck"))
                                                 .setIndex(index)
+                                                .setId("dd")
                                                 .setScore(0.082873434f)
                                 )),
                 results.getHits());
@@ -167,11 +173,13 @@ public class IndexServiceTest {
         List<IndexRequest> indexRequests = List.of(
                 new IndexRequest()
                         .setIndexName(index)
+                        .setId("coolridge")
                         .setDocument(
                                 Map.of("person", Map.of("firstName", "Calvin", "lastName", "Coolridge"))
                         ),
                 new IndexRequest()
                         .setIndexName(index)
+                        .setId("harrison")
                         .setDocument(
                                 Map.of("person", Map.of("firstName", "William", "lastName", "Harrison"))
                         )
@@ -190,7 +198,7 @@ public class IndexServiceTest {
                 List.of(
                         new Hit().setSource(
                                         Map.of("person", Map.of("firstName", "Calvin", "lastName", "Coolridge")))
-                                .setIndex(index)
+                                .setIndex(index).setId("coolridge")
                                 .setScore(0.31506687f)
                 )),
                 results.getHits());
