@@ -43,6 +43,19 @@ paths:
       responses:
         "200":
           description: OK
+  /{index}:
+    delete:
+      tags:
+      - Index Handler
+      parameters:
+      - name: index
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
   /{index}/_doc:
     post:
       tags:
@@ -63,6 +76,10 @@ paths:
       responses:
         "200":
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexResult'
   /{index}/_doc/{id}:
     put:
       tags:
@@ -88,6 +105,10 @@ paths:
       responses:
         "200":
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexResult'
     post:
       tags:
       - Index Handler
@@ -112,6 +133,10 @@ paths:
       responses:
         "200":
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexResult'
   /{index}/_search:
     get:
       tags:
@@ -160,6 +185,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Hit'
+    IndexResult:
+      type: object
+      properties:
+        _index:
+          type: string
+        _type:
+          type: string
+        _id:
+          type: string
     SearchResults:
       type: object
       properties:
@@ -176,5 +210,4 @@ components:
           type: integer
         relation:
           type: string
-
 ```
