@@ -14,10 +14,7 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.*;
 import org.apache.lucene.store.FSDirectory;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
@@ -25,10 +22,7 @@ import org.jboss.logging.Logger;
 import javax.enterprise.context.ApplicationScoped;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @ApplicationScoped
 public class IndexService {
@@ -66,7 +60,7 @@ public class IndexService {
                     .setTook(end - start)
                     .getHits().getTotal()
                     .setValue(topDocs.totalHits.value)
-                    .setRelation(topDocs.totalHits.relation == topDocs.totalHits.relation.EQUAL_TO ? "eq" : "gte");
+                    .setRelation(topDocs.totalHits.relation == TotalHits.Relation.EQUAL_TO ? "eq" : "gte");
             return searchResults;
         } catch (ParseException | IOException e) {
             LOGGER.error(e);
@@ -74,8 +68,9 @@ public class IndexService {
         }
     }
 
-    public void index(List<IndexRequest> indexRequests) {
+    public List<IndexResult> index(List<IndexRequest> indexRequests) {
         Map<String, IndexWriter> writerMap = new HashMap<>();
+        List<IndexResult> indexResults = new ArrayList<>();
         for (IndexRequest indexRequest : indexRequests) {
             IndexWriter writer;
             if (writerMap.containsKey(indexRequest.getIndexName())) {
@@ -94,14 +89,16 @@ public class IndexService {
                 document.add(new TextField(entry.getKey(), entry.getValue().toString(), Field.Store.NO));
                 document.add(new AllField(entry.getValue().toString()));
             }
+            String id = Optional.ofNullable(indexRequest.getId()).orElse(UUID.randomUUID().toString());
             try {
                 if (indexRequest.getId() != null) {
                     document.add(new StringField(ID_TERM, indexRequest.getId(), Field.Store.YES));
                     writer.updateDocument(new Term(ID_TERM, indexRequest.getId()), document);
                 } else {
-                    document.add(new StringField(ID_TERM, UUID.randomUUID().toString(), Field.Store.YES));
+                    document.add(new StringField(ID_TERM, id, Field.Store.YES));
                     writer.addDocument(document);
                 }
+                indexResults.add(new IndexResult().setIndex(indexRequest.getIndexName()).setId(id));
             } catch (IOException e) {
                 LOGGER.error(e);
             }
@@ -114,6 +111,7 @@ public class IndexService {
                 LOGGER.error(e);
             }
         }
+        return indexResults;
     }
 
     public void deleteIndex(DeleteIndexRequest deleteIndexRequest) {
@@ -131,12 +129,11 @@ public class IndexService {
 
     private IndexWriter getIndexWriter(String indexName) {
         try {
-            IndexWriter indexWriter = new IndexWriter(
+            return new IndexWriter(
                     FSDirectory.open(Paths.get(indexMount + indexName)),
                     new IndexWriterConfig(new StandardAnalyzer())
                             .setIndexDeletionPolicy(NoDeletionPolicy.INSTANCE)
             );
-            return indexWriter;
         } catch (IOException e) {
             LOGGER.error("Error while trying to create an index writer for index " + indexName, e);
             throw new RuntimeException(e);
