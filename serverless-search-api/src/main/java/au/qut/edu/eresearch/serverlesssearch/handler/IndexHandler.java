@@ -36,7 +36,8 @@ public class IndexHandler {
     public IndexResult updateDocument(Map<String, Object> document, @PathParam("index") String index, @PathParam("id") String id) throws Exception {
         IndexRequest indexRequest = new IndexRequest(index, document, id);
         String message = INDEX_REQUEST_WRITER.writeValueAsString(indexRequest);
-        sqs.sendMessage(m -> m.queueUrl(queueUrl).messageBody(message).messageGroupId(index));
+        sqs.sendMessage(m -> m.queueUrl(queueUrl).messageBody(message).messageGroupId(index)
+                .messageDeduplicationId(String.format("%s:%d", index, indexRequest.hashCode())));
         return new IndexResult().setIndex(index).setId(id);
     }
 
