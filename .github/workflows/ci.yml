@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - ERE-1670
   pull_request:
 
 env:
