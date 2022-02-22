@@ -21,7 +21,8 @@ import org.jboss.logging.Logger;
 
 import javax.enterprise.context.ApplicationScoped;
 import java.io.IOException;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 
 @ApplicationScoped
@@ -114,39 +115,75 @@ public class IndexService {
         return indexResults;
     }
 
-    public void deleteIndex(DeleteIndexRequest deleteIndexRequest) {
-        IndexWriter writer = getIndexWriter(deleteIndexRequest.getIndexName());
+
+    public void deleteIndex(String indexName) {
+        if (!Files.exists(getIndexPath(indexName))) {
+            throw new IndexNotFoundException(indexName);
+        }
         try {
+            IndexWriter writer = new IndexWriter(
+                    FSDirectory.open(getIndexPath(indexName)),
+                    new IndexWriterConfig(new StandardAnalyzer())
+                            .setOpenMode(IndexWriterConfig.OpenMode.CREATE));
             writer.deleteAll();
             writer.commit();
             writer.close();
+
+            Files.walkFileTree(getIndexPath(indexName),
+                    new SimpleFileVisitor<>() {
+                        @Override
+                        public FileVisitResult postVisitDirectory(
+                                Path dir, IOException exc) throws IOException {
+                            Files.delete(dir);
+                            return FileVisitResult.CONTINUE;
+                        }
+
+                        @Override
+                        public FileVisitResult visitFile(
+                                Path file, BasicFileAttributes attrs)
+                                throws IOException {
+                            Files.delete(file);
+                            return FileVisitResult.CONTINUE;
+                        }
+                    });
+
         } catch (IOException e) {
-            LOGGER.error(e);
-            throw new RuntimeException(e);
+            throw mapIndexException(indexName, e);
         }
     }
 
 
+    private Path getIndexPath(String indexName) {
+        return Paths.get(indexMount + indexName);
+    }
+
+
+    private RuntimeException mapIndexException(String index, IOException e) {
+        if (e instanceof org.apache.lucene.index.IndexNotFoundException) {
+            return new IndexNotFoundException(index, e);
+        }
+        LOGGER.error(String.format("Unexpected error occurred for index %s", index), e);
+        return new RuntimeException(String.format("Unexpected error occurred for index %s", index), e);
+    }
+
     private IndexWriter getIndexWriter(String indexName) {
         try {
             return new IndexWriter(
-                    FSDirectory.open(Paths.get(indexMount + indexName)),
+                    FSDirectory.open(getIndexPath(indexName)),
                     new IndexWriterConfig(new StandardAnalyzer())
                             .setIndexDeletionPolicy(NoDeletionPolicy.INSTANCE)
             );
         } catch (IOException e) {
-            LOGGER.error("Error while trying to create an index writer for index " + indexName, e);
-            throw new RuntimeException(e);
+            throw mapIndexException(indexName, e);
         }
     }
 
     private IndexSearcher getIndexSearcher(String indexName) {
         try {
-            DirectoryReader newDirectoryReader = DirectoryReader.open(FSDirectory.open(Paths.get(indexMount + indexName)));
+            DirectoryReader newDirectoryReader = DirectoryReader.open(FSDirectory.open(getIndexPath(indexName)));
             return new IndexSearcher(newDirectoryReader);
         } catch (IOException e) {
-            LOGGER.error("Error while trying to create an index searcher for index " + indexName, e);
-            throw new RuntimeException(e);
+            throw mapIndexException(indexName, e);
         }
     }
 

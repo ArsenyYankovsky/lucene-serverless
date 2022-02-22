@@ -2,6 +2,7 @@ package au.qut.edu.eresearch.serverlesssearch.handler;
 
 import au.qut.edu.eresearch.serverlesssearch.model.IndexRequest;
 import au.qut.edu.eresearch.serverlesssearch.model.IndexResult;
+import au.qut.edu.eresearch.serverlesssearch.service.IndexService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -10,6 +11,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.util.Map;
 import java.util.UUID;
 
@@ -21,6 +23,10 @@ public class IndexHandler {
 
     @ConfigProperty(name = "queue.url")
     String queueUrl;
+
+    @Inject
+    protected IndexService indexService;
+
 
     private static final ObjectWriter INDEX_REQUEST_WRITER = new ObjectMapper().writerFor(IndexRequest.class);
 
@@ -47,6 +53,13 @@ public class IndexHandler {
     public IndexResult addDocument(Map<String, Object> document, @PathParam("index") String index) throws Exception {
         String id = UUID.randomUUID().toString();
         return updateDocument(document, index, id);
+    }
+
+    @DELETE
+    @Path("/{index}")
+    public Response addDocument(@PathParam("index") String index)  {
+         indexService.deleteIndex(index);
+         return Response.ok().build();
     }
 
 }

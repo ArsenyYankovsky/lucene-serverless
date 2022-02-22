@@ -20,7 +20,7 @@ public class IndexServiceTest {
     IndexService indexService;
 
     @Test
-    public void indexAndQueryNoId() throws Exception {
+    public void indexAndQueryNoId() {
 
         // given
         String index = UUID.randomUUID().toString();
@@ -66,7 +66,7 @@ public class IndexServiceTest {
     }
 
     @Test
-    public void indexAndQueryWithId() throws Exception {
+    public void indexAndQueryWithId() {
 
         // given
         String index = UUID.randomUUID().toString();
@@ -112,7 +112,7 @@ public class IndexServiceTest {
 
 
     @Test
-    public void indexAndQueryAll() throws Exception {
+    public void indexAndQueryAll() {
 
         // given
         String index = UUID.randomUUID().toString();
@@ -164,9 +164,91 @@ public class IndexServiceTest {
 
     }
 
+    @Test
+    public void queryIndexNotFound() {
+
+        // given
+        String index = UUID.randomUUID().toString();
+
+
+
+        // when
+        Exception exception = Assertions.assertThrows(
+                IndexNotFoundException.class,
+                () -> indexService
+                        .query(new SearchRequest()
+                                .setIndexName(index).setQuery("frank")));
+
+
+        // then
+        Assertions.assertEquals(String.format("no such index [%s]", index), exception.getMessage());
+
+
+    }
 
     @Test
-    public void indexAndQueryNested() throws Exception {
+    public void deleteIndexNotFound() {
+
+        // given
+        String index = UUID.randomUUID().toString();
+
+
+        // when
+        Exception exception = Assertions.assertThrows(
+                IndexNotFoundException.class,
+                () -> indexService
+                        .deleteIndex(index));
+
+
+        // then
+        Assertions.assertEquals(String.format("no such index [%s]", index), exception.getMessage());
+
+    }
+
+    @Test
+    public void createIndex() {
+
+        // given
+        String index = UUID.randomUUID().toString();
+
+
+        // when
+        Exception exception = Assertions.assertThrows(
+                IndexNotFoundException.class,
+                () -> indexService
+                        .deleteIndex(index));
+
+
+        // then
+        Assertions.assertEquals(String.format("no such index [%s]", index), exception.getMessage());
+
+    }
+
+    @Test
+    public void deleteIndex() {
+
+        // given
+        String index = UUID.randomUUID().toString();
+
+        // when
+        indexService.index(List.of(
+                    new IndexRequest()
+                            .setIndexName(index)
+                            .setId("dt")
+                            .setDocument(
+                                    Map.of("firstName", "O'Doyle",
+                                            "lastName", "Rules")
+                            )));
+        indexService.deleteIndex(index);
+
+        // then
+        Assertions.assertThrows(IndexNotFoundException.class, () -> indexService.deleteIndex(index));
+
+    }
+
+
+    @Test
+    public void indexAndQueryNested() {
 
         // given
         String index = UUID.randomUUID().toString();
@@ -195,12 +277,12 @@ public class IndexServiceTest {
                 new Hits()
                         .setTotal(new Total().setValue(1).setRelation("eq"))
                         .setHits(
-                List.of(
-                        new Hit().setSource(
-                                        Map.of("person", Map.of("firstName", "Calvin", "lastName", "Coolridge")))
-                                .setIndex(index).setId("coolridge")
-                                .setScore(0.31506687f)
-                )),
+                                List.of(
+                                        new Hit().setSource(
+                                                        Map.of("person", Map.of("firstName", "Calvin", "lastName", "Coolridge")))
+                                                .setIndex(index).setId("coolridge")
+                                                .setScore(0.31506687f)
+                                )),
                 results.getHits());
 
     }
