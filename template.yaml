@@ -239,7 +239,6 @@
         CodeUri: serverless-search-async/target/function.zip
         MemorySize: 128
         Timeout: 15
-        ReservedConcurrentExecutions: 1
         VpcConfig:
           SecurityGroupIds:
             - !Ref ApiSecurityGroup
