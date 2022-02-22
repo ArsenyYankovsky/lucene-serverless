@@ -57,5 +57,21 @@ public class SearchHandlerTest {
                 .body("hits.hits[0]._source.lastName", equalTo("Draper"));
     }
 
+    @Test
+    public void searchIndexNotFound() throws Exception {
+
+        // Given
+        given()
+                .contentType("application/json")
+                .accept("application/json")
+                .param("q", "lastName:should-not-be-found")
+                .when()
+                .get("/no-index/_search")
+                .then()
+                .log().body()
+                .statusCode(404)
+                .body( equalTo("no such index [no-index]"));
+    }
+
 
 }
