@@ -17,7 +17,7 @@ public class SearchHandler {
 
     @GET
     @Path("/{index}/_search")
-    @RolesAllowed("search")
+    @RolesAllowed("api/search")
     @Produces( MediaType.APPLICATION_JSON )
     public SearchResults search(@PathParam("index") String index,
                                 @QueryParam("q") String query) {
