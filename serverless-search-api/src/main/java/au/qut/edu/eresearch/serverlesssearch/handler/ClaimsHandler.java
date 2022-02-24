@@ -14,10 +14,9 @@ public class ClaimsHandler {
     JsonWebToken jwt;
 
     @GET
-    @Path("/claims")
+    @Path("/scope")
     @PermitAll
-
-    public JsonWebToken claims() {
-        return jwt;
+    public String scope() {
+        return jwt.getClaim("scope");
     }
 }
