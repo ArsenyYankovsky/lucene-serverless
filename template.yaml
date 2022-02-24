@@ -214,6 +214,7 @@
             DISABLE_SIGNAL_HANDLERS: true
             QUARKUS_OIDC_AUTH_SERVER_URL: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${ApiUserPool}/'
             QUARKUS_OIDC_CLIENT_ID: !Ref ApiClient
+            QUARKUS_OIDC_ROLES_ROLE_CLAIM_PATH: scope
         Policies:
           - AWSLambdaVPCAccessExecutionRole
           - SQSSendMessagePolicy:
