@@ -5,6 +5,7 @@ An adaptation of Arseny Yankovsky lucene-serverless with the following aims
 * No servers
 * No fixed costs 
 * Low (250-300ms) cold starts
+* Secure
 * [OpenSearch](https://github.com/opensearch-project/OpenSearch) compatible signatures (WIP)
 * Production Ready (WIP)
 
