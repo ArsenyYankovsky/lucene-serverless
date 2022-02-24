@@ -6,17 +6,25 @@ import javax.annotation.security.PermitAll;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import java.util.Set;
 
-@Path("/")
+@Path("/claims")
 public class ClaimsHandler {
 
     @Inject
     JsonWebToken jwt;
 
     @GET
-    @Path("/scope")
+    @Path("/scopes")
     @PermitAll
-    public String scope() {
+    public String scopes() {
         return jwt.getClaim("scope");
+    }
+
+    @GET
+    @Path("/groups")
+    @PermitAll
+    public Set<String> groups() {
+        return jwt.getGroups();
     }
 }
