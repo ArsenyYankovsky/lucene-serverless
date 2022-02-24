@@ -15,9 +15,9 @@ public class ClaimsHandler {
     JsonWebToken jwt;
 
     @GET
-    @Path("/scopes")
+    @Path("/scope")
     @PermitAll
-    public String scopes() {
+    public String scope() {
         return jwt.getClaim("scope");
     }
 
@@ -26,5 +26,12 @@ public class ClaimsHandler {
     @PermitAll
     public Set<String> groups() {
         return jwt.getGroups();
+    }
+
+    @GET
+    @Path("/subject")
+    @PermitAll
+    public String subject() {
+        return jwt.getSubject();
     }
 }
