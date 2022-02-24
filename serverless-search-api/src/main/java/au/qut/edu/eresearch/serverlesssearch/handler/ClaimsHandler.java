@@ -1,5 +1,7 @@
 package au.qut.edu.eresearch.serverlesssearch.handler;
 
+import io.quarkus.oidc.IdToken;
+import io.quarkus.security.Authenticated;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import javax.annotation.security.PermitAll;
@@ -9,29 +11,33 @@ import javax.ws.rs.Path;
 import java.util.Set;
 
 @Path("/claims")
+@Authenticated
 public class ClaimsHandler {
 
     @Inject
-    JsonWebToken jwt;
+    @IdToken
+    JsonWebToken idToken;
 
     @GET
-    @Path("/scope")
+    @Path("/id/scope")
     @PermitAll
-    public String scope() {
-        return jwt.getClaim("scope");
+    public String idScope() {
+        return idToken.getClaim("scope");
     }
 
     @GET
-    @Path("/groups")
+    @Path("/id/groups")
     @PermitAll
-    public Set<String> groups() {
-        return jwt.getGroups();
+    public Set<String> idGroups() {
+        return idToken.getGroups();
     }
 
     @GET
-    @Path("/subject")
+    @Path("/id/subject")
     @PermitAll
-    public String subject() {
-        return jwt.getSubject();
+    public String idSubject() {
+        return idToken.getSubject();
     }
+
+
 }
