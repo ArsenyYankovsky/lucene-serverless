@@ -7,6 +7,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import io.quarkus.test.oidc.server.OidcWiremockTestResource;
 import io.quarkus.test.security.TestSecurity;
+import io.smallrye.jwt.build.Jwt;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
@@ -25,7 +26,6 @@ public class SearchHandlerTest {
     IndexService indexService;
 
     @Test
-    @TestSecurity(user = "api", roles = "api/search")
     public void search()  {
 
         // Given
@@ -51,6 +51,11 @@ public class SearchHandlerTest {
                                 )));
 
         given()
+                .auth().oauth2(Jwt
+                        .claim("scope", "api/search ")
+                        .issuer("https://server.example.com")
+                        .audience("https://service.example.com")
+                        .sign())
                 .contentType("application/json")
                 .accept("application/json")
                 .param("q", "lastName:draper")
@@ -68,6 +73,11 @@ public class SearchHandlerTest {
 
         // Given
         given()
+                .auth().oauth2(Jwt
+                        .claim("scope", "api/search ")
+                        .issuer("https://server.example.com")
+                        .audience("https://service.example.com")
+                        .sign())
                 .contentType("application/json")
                 .accept("application/json")
                 .param("q", "lastName:should-not-be-found")
@@ -85,6 +95,11 @@ public class SearchHandlerTest {
 
         // Given
         given()
+                .auth().oauth2(Jwt
+                        .claim("scope", "api/index ")
+                        .issuer("https://server.example.com")
+                        .audience("https://service.example.com")
+                        .sign())
                 .contentType("application/json")
                 .accept("application/json")
                 .param("q", "lastName:should-not-be-permitted")
