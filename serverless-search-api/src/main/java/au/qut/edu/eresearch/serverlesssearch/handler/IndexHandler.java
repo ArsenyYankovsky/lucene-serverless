@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -32,6 +33,7 @@ public class IndexHandler {
 
     @PUT
     @Path("/{index}/_doc/{id}")
+    @RolesAllowed("index")
     @Consumes(MediaType.APPLICATION_JSON)
     public IndexResult updateDocument(Map<String, Object> document, @PathParam("index") String index, @PathParam("id") String id) throws Exception {
         IndexRequest indexRequest = new IndexRequest(index, document, id);
@@ -43,6 +45,7 @@ public class IndexHandler {
 
     @POST
     @Path("/{index}/_doc/{id}")
+    @RolesAllowed("index")
     @Consumes(MediaType.APPLICATION_JSON)
     public IndexResult updateDocumentPost(Map<String, Object> document, @PathParam("index") String index, @PathParam("id") String id) throws Exception {
        return updateDocument(document, index, id);
@@ -50,6 +53,7 @@ public class IndexHandler {
 
     @POST
     @Path("/{index}/_doc")
+    @RolesAllowed("index")
     @Consumes(MediaType.APPLICATION_JSON)
     public IndexResult addDocument(Map<String, Object> document, @PathParam("index") String index) throws Exception {
         String id = UUID.randomUUID().toString();
@@ -58,6 +62,7 @@ public class IndexHandler {
 
     @DELETE
     @Path("/{index}")
+    @RolesAllowed("index")
     public Response addDocument(@PathParam("index") String index)  {
          indexService.deleteIndex(index);
          return Response.ok().build();

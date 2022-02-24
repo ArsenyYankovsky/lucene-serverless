@@ -5,17 +5,12 @@
     # FileSystem Parameters
     Encryption:
       Type: String
-      Description: Enable Encryption for the FileSystem?  (Default - true)
+      Description: Enable Encryption? (Default - true)
       ConstraintDescription: Must be a boolean value (true / false)
       AllowedValues:
         - true
         - false
       Default: true
-
-    FileSystemName:
-      Type: String
-      Description: Name for tagging the EFS FileSystem (Default - CloudFormationStackNameFileSystem)
-      Default: " "
 
     PerformanceMode:
       Type: String
@@ -80,10 +75,6 @@
 
   Conditions:
 
-    # FileSystem Conditions
-    hasFsTags:
-      !Not [!Equals [!Ref FileSystemName, " "]]
-
     isEncrypted:
       !Equals [!Ref Encryption, true]
 
@@ -97,7 +88,6 @@
       - Condition: isEncrypted
       - Condition: noKmsKeyId
 
-
   Globals:
     Api:
       EndpointConfiguration: REGIONAL
@@ -106,14 +96,13 @@
 
   Resources:
 
-
     FileSystem:
       Type: AWS::EFS::FileSystem
       Properties:
         Encrypted: !Ref Encryption
         FileSystemTags:
           - Key: Name
-            Value: !If [hasFsTags, !Ref FileSystemName, !Sub "${AWS::StackName}FileSystem"]
+            Value: !Sub '${AWS::StackName}FileSystem'
         KmsKeyId: !If [useDefaultCMK, !Ref "AWS::NoValue", !Ref KmsKeyId]
         PerformanceMode: !Ref PerformanceMode
         ThroughputMode: !Ref ThroughputMode
@@ -148,7 +137,7 @@
       Properties:
         GroupDescription: FileSystem Security Group
         VpcId: !Ref VpcId
-        GroupName: !If [hasFsTags, !Join ["", [!Ref FileSystemName, "FileSystemSecurityGroup"]], !Join ["", [!Ref "AWS::StackName", "FileSystemSecurityGroup"]]]
+        GroupName: !Sub '${AWS::StackName}FileSystemSecurityGroup'
         SecurityGroupIngress:
           - IpProtocol: -1
             SourceSecurityGroupId: !Ref ApiSecurityGroup
@@ -158,7 +147,7 @@
       Properties:
         GroupDescription: Api Security Group
         VpcId: !Ref VpcId
-        GroupName: !If [hasFsTags, !Join ["", [!Ref FileSystemName, "ApiSecurityGroup"]], !Join ["", [!Ref "AWS::StackName", "ApiSecurityGroup"]]]
+        GroupName: !Sub '${AWS::StackName}ApiSecurityGroup'
 
     AccessPoint:
       Type: 'AWS::EFS::AccessPoint'
@@ -177,16 +166,16 @@
     IndexQueue:
       Type: AWS::SQS::Queue
       Properties:
-        QueueName: IndexQueue.fifo
+        QueueName: !Sub '${AWS::StackName}-IndexQueue.fifo'
         FifoQueue: true
         RedrivePolicy:
           deadLetterTargetArn: !GetAtt IndexDeadLeterQueue.Arn
           maxReceiveCount: 3
 
     IndexDeadLeterQueue:
-      Type: AWS::SQS::Queue # More info about SQS Resource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-sqs-queues.html
+      Type: AWS::SQS::Queue
       Properties:
-        QueueName: IndexDeadLeterQueue.fifo
+        QueueName: !Sub '${AWS::StackName}-IndexDeadLetterQueue.fifo'
         FifoQueue: true
 
     ApiHandler:
@@ -223,6 +212,8 @@
             QUEUE_URL: !Ref IndexQueue
             INDEX_MOUNT: /mnt/efs/
             DISABLE_SIGNAL_HANDLERS: true
+            QUARKUS_OIDC_AUTH_SERVER_URL: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${ApiUserPool}/'
+            QUARKUS_OIDC_CLIENT_ID: !Ref ApiClient
         Policies:
           - AWSLambdaVPCAccessExecutionRole
           - SQSSendMessagePolicy:
@@ -267,6 +258,46 @@
           - EFSWriteAccessPolicy:
               FileSystem: !Ref FileSystem
               AccessPoint: !Ref AccessPoint
+
+    ApiUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: !Sub '${AWS::StackName}-ApiUserPool'
+
+    ApiResourceServer:
+      Type: AWS::Cognito::UserPoolResourceServer
+      Properties:
+        UserPoolId: !Ref ApiUserPool
+        Identifier: 'api'
+        Name: !Sub '${AWS::StackName}-ApiResourceServer'
+        Scopes:
+          - ScopeName: index
+            ScopeDescription: Index operations
+          - ScopeName: search
+            ScopeDescription: Search operations
+
+    ApiClient:
+      Type: AWS::Cognito::UserPoolClient
+      DependsOn: ApiResourceServer
+      Properties:
+        UserPoolId: !Ref ApiUserPool
+        ClientName: !Sub '${AWS::StackName}-ApiClient'
+        GenerateSecret: true
+        AllowedOAuthFlowsUserPoolClient: true
+        AllowedOAuthFlows:
+          - client_credentials
+        SupportedIdentityProviders:
+          - COGNITO
+        AllowedOAuthScopes:
+          - api/index
+          - api/search
+
+    ApiUserPoolDomain:
+      Type: AWS::Cognito::UserPoolDomain
+      Properties:
+        Domain: !Sub '${AWS::StackName}'
+        UserPoolId: !Ref ApiUserPool
+
   Outputs:
     ServerlessSearchApiDomain:
       Description: 'API Gateway endpoint for DNS configuration'
@@ -274,3 +305,15 @@
     ServerlessSearchApi:
       Description: 'API Gateway endpoint URL for Prod stage'
       Value: !Sub 'https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/'
+    ApiUserPool:
+      Description: 'API User Pool ID'
+      Value: !Ref ApiUserPool
+    ApiUserPoolName:
+      Description: 'API User Pool Name'
+      Value: !Sub '${AWS::StackName}-ApiUserPool'
+    ApiResourceServer:
+      Description: 'API Resource Server'
+      Value: !Ref ApiResourceServer
+    ApiUserPoolDomain:
+      Description: 'CognitoDomainName URL'
+      Value: !Sub 'https://${ApiUserPoolDomain}.auth.${AWS::Region}.amazoncognito.com'
