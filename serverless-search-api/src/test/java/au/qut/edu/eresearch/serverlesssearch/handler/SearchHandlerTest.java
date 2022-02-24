@@ -25,7 +25,7 @@ public class SearchHandlerTest {
     IndexService indexService;
 
     @Test
-    @TestSecurity(user = "api", roles = "search")
+    @TestSecurity(user = "api", roles = "api/search")
     public void search()  {
 
         // Given
@@ -63,7 +63,7 @@ public class SearchHandlerTest {
     }
 
     @Test
-    @TestSecurity(user = "api", roles = "search")
+    @TestSecurity(user = "api", roles = "api/search")
     public void searchIndexNotFound() throws Exception {
 
         // Given
@@ -80,7 +80,7 @@ public class SearchHandlerTest {
     }
 
     @Test
-    @TestSecurity(user = "api", roles = "index")
+    @TestSecurity(user = "api", roles = "api/index")
     public void searchInvalidRole() throws Exception {
 
         // Given

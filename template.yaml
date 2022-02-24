@@ -300,10 +300,10 @@
 
   Outputs:
     ServerlessSearchApiDomain:
-      Description: 'API Gateway endpoint for DNS configuration'
+      Description: 'The API Domain'
       Value: !Sub '${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com'
     ServerlessSearchApi:
-      Description: 'API Gateway endpoint URL for Prod stage'
+      Description: 'The API Endpoint'
       Value: !Sub 'https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/'
     ApiUserPool:
       Description: 'API User Pool ID'
