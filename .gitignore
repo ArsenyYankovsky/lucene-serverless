@@ -1,5 +1,7 @@
-target/
+**/target/*
+!**/target/function.zip
 .idea
 *.iml
 .serverless
 node_modules
+.DS_Store

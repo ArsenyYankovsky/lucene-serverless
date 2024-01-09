@@ -1,34 +1,37 @@
 service: lucene-serverless
-variablesResolutionMode: 20210326
+variablesResolutionMode: 20210219
 
+# TODO: replace all variables below
 custom:
   name: ${sls:stage}-${self:service}
   region: ${opt:region, self:provider.region}
-  vpcId: vpc-8aa25ee3 # TODO: replace with your VPC settings region
-  subnetId1: subnet-efd7e8a5 # TODO: replace with your VPC settings region
-  subnetId2: subnet-7a4b5702 # TODO: replace with your VPC settings region
-  subnetId3: subnet-486d9f21 # TODO: replace with your VPC settings region
+  vpcId: vpc-00690f6e
+  subnetId1: subnet-039f496e
+  subnetId2: subnet-0c0af8ea
 
 frameworkVersion: ">=1.56.1"
 
 provider:
   name: aws
-  region: eu-north-1 # TODO: replace with your region
+  region: ${self:custom.region}
   versionFunctions: false
-  tracing: false
+  apiGateway:
+    shouldStartNameWithService: true
+  tracing:
+    lambda: false
   timeout: 15
   environment:
-    stage: ${sls:stage}
+    stage: prod
     DISABLE_SIGNAL_HANDLERS: true
-  iamRoleStatements:
-    ${file(roleStatements.yml)}
+  iam:
+    role:
+      statements: ${file(roleStatements.yml)}
   vpc:
     securityGroupIds:
       - Ref: EfsSecurityGroup
     subnetIds:
       - ${self:custom.subnetId1}
       - ${self:custom.subnetId2}
-      - ${self:custom.subnetId3}
 
 package:
   individually: true
@@ -38,47 +41,48 @@ functions:
     name: ${self:custom.name}-query
     runtime: provided
     handler: native.handler
+    provisionedConcurrency: 1 # ~$2.5/m, lower cold start time
+    memorySize: 256
     events:
       - http: POST /query
     dependsOn:
       - EfsMountTarget1
       - EfsMountTarget2
-      - EfsMountTarget3
       - EfsAccessPoint
     fileSystemConfig:
       localMountPath: /mnt/data
       arn:
-        Fn::GetAtt: [ EfsAccessPoint, Arn ]
+        Fn::GetAtt: [EfsAccessPoint, Arn]
     package:
       artifact: target/function.zip
     environment:
       QUARKUS_LAMBDA_HANDLER: query
-      QUARKUS_PROFILE: ${sls:stage}
+      QUARKUS_PROFILE: prod
 
   index:
     name: ${self:custom.name}-index
     runtime: provided
     handler: native.handler
     reservedConcurrency: 1
+    memorySize: 256
     timeout: 180
     dependsOn:
       - EfsMountTarget1
       - EfsMountTarget2
-      - EfsMountTarget3
       - EfsAccessPoint
     fileSystemConfig:
       localMountPath: /mnt/data
       arn:
-        Fn::GetAtt: [ EfsAccessPoint, Arn ]
+        Fn::GetAtt: [EfsAccessPoint, Arn]
     package:
       artifact: target/function.zip
     environment:
       QUARKUS_LAMBDA_HANDLER: index
-      QUARKUS_PROFILE: ${sls:stage}
+      QUARKUS_PROFILE: prod
     events:
       - sqs:
           arn:
-            Fn::GetAtt: [ WriteQueue, Arn ]
+            Fn::GetAtt: [WriteQueue, Arn]
           batchSize: 5000
           maximumBatchingWindow: 5
 
@@ -86,16 +90,17 @@ functions:
     name: ${self:custom.name}-enqueue-index
     runtime: provided
     handler: native.handler
+    memorySize: 256
     package:
       artifact: target/function.zip
     vpc:
-      securityGroupIds: [ ]
-      subnetIds: [ ]
+      securityGroupIds: []
+      subnetIds: []
     events:
       - http: POST /index
     environment:
       QUARKUS_LAMBDA_HANDLER: enqueue-index
-      QUARKUS_PROFILE: ${sls:stage}
+      QUARKUS_PROFILE: prod
       QUEUE_URL:
         Ref: WriteQueue
 
@@ -103,20 +108,20 @@ functions:
     name: ${self:custom.name}-delete-index
     runtime: provided
     handler: native.handler
+    memorySize: 256
     dependsOn:
       - EfsMountTarget1
       - EfsMountTarget2
-      - EfsMountTarget3
       - EfsAccessPoint
     fileSystemConfig:
       localMountPath: /mnt/data
       arn:
-        Fn::GetAtt: [ EfsAccessPoint, Arn ]
+        Fn::GetAtt: [EfsAccessPoint, Arn]
     package:
       artifact: target/function.zip
     environment:
       QUARKUS_LAMBDA_HANDLER: deleteIndex
-      QUARKUS_PROFILE: ${sls:stage}
+      QUARKUS_PROFILE: prod
 
 resources:
   Resources:
@@ -127,7 +132,7 @@ resources:
         VisibilityTimeout: 900
         RedrivePolicy:
           deadLetterTargetArn:
-            Fn::GetAtt: [ WriteDLQ, Arn ]
+            Fn::GetAtt: [WriteDLQ, Arn]
           maxReceiveCount: 5
 
     WriteDLQ:
@@ -145,6 +150,8 @@ resources:
           - Key: Name
             Value: ${self:custom.name}-fs
         PerformanceMode: generalPurpose
+        ThroughputMode: elastic # faster scale up/down
+        Encrypted: true
         FileSystemPolicy:
           Version: "2012-10-17"
           Statement:
@@ -162,9 +169,13 @@ resources:
         SecurityGroupIngress:
           - IpProtocol: -1
             CidrIp: "0.0.0.0/0"
+          - IpProtocol: -1
+            CidrIpv6: "::/0"
         SecurityGroupEgress:
           - IpProtocol: -1
             CidrIp: "0.0.0.0/0"
+          - IpProtocol: -1
+            CidrIpv6: "::/0"
 
     EfsMountTarget1:
       Type: AWS::EFS::MountTarget
@@ -182,16 +193,8 @@ resources:
         SecurityGroups:
           - Ref: EfsSecurityGroup
 
-    EfsMountTarget3:
-      Type: AWS::EFS::MountTarget
-      Properties:
-        FileSystemId: !Ref FileSystem
-        SubnetId: ${self:custom.subnetId3}
-        SecurityGroups:
-          - Ref: EfsSecurityGroup
-
     EfsAccessPoint:
-      Type: 'AWS::EFS::AccessPoint'
+      Type: "AWS::EFS::AccessPoint"
       Properties:
         FileSystemId: !Ref FileSystem
         PosixUser:

@@ -10,6 +10,12 @@ This project demonstrates a proof-of-concept serverless full-text search solutio
 
 ⚠️ Better deletion policy is required. Right now old segment files are not deleted as a simple workaround to handle concurrent reads and writes
 
+ℹ️ Cost can be controlled via several factors:
+
+* EFS' [Elastic](https://docs.aws.amazon.com/efs/latest/ug/performance.html#throughput-modes) throughput mode cost more $$, but scales better up and down
+* Lambda's [Provisioned Concurrency](https://docs.aws.amazon.com/lambda/latest/dg/provisioned-concurrency.html) provides faster, more consistent first request times but costs more $$
+* Lambda memory is kept ~256mb, tune based on index size and observed speeds. Note: vCPU is allocated proportional to memory.
+
 Please note that the project is not ready for production since I haven't tested it under a prolonged load and to be honest interfaces need to be nicer.
 
 Read the blog post about it [here](https://medium.com/@arsenyyankovski/serverless-full-text-search-with-aws-lambda-and-efs-cf24e1b6fe3b)

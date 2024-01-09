@@ -45,7 +45,7 @@ public class QueryHandler implements RequestHandler<APIGatewayProxyRequestEvent,
             TopDocs topDocs = searcher.search(query, 10);
 
             for (ScoreDoc scoreDocs : topDocs.scoreDocs) {
-                Document document = searcher.doc(scoreDocs.doc);
+                Document document = searcher.storedFields().document(scoreDocs.doc);
 
                 Map<String, String> result = new HashMap<>();
 
