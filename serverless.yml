@@ -4,7 +4,7 @@ variablesResolutionMode: 20210219
 # TODO: replace all variables below
 custom:
   name: ${sls:stage}-${self:service}
-  region: ${opt:region, self:provider.region}
+  region: ${opt:region, "us-east-1"}
   vpcId: vpc-00690f6e
   subnetId1: subnet-039f496e
   subnetId2: subnet-0c0af8ea

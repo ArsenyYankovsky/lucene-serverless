@@ -24,4 +24,4 @@ jobs:
     - name: Validate serverless
       uses: serverless/github-action@master
       with:
-        args: deploy --noDeploy
+        args: package
