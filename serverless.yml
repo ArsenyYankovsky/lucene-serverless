@@ -8,7 +8,6 @@ custom:
   vpcId: vpc-00690f6e
   subnetId1: subnet-039f496e
   subnetId2: subnet-0c0af8ea
-  region: us-east-1
 
 frameworkVersion: ">=1.56.1"
 
